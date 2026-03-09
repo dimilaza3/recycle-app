@@ -93,7 +93,7 @@
       background: #f8fafc;
       border-radius: 16px;
       padding: 14px;
-      min-height: 120px;
+      min-height: 140px;
     }
     .small { font-size: 14px; }
     ul { margin: 8px 0 0 18px; padding: 0; }
@@ -103,6 +103,18 @@
     .hidden { display: none; }
     #reader { width: 100%; max-width: 420px; margin: 10px auto 0; }
     .footer-note { margin-top: 12px; font-size: 13px; color: var(--muted); }
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #cbd5e1;
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+      animation: spin 1s linear infinite;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 860px) {
       .grid { grid-template-columns: 1fr; }
     }
@@ -117,7 +129,7 @@
         <span class="pill">Δουλεύει σε browser</span>
         <span class="pill">Δεν θέλει Play Store</span>
         <span class="pill">Σκανάρισμα με κάμερα</span>
-        <span class="pill">Τοπική αποθήκευση στον browser</span>
+        <span class="pill">Αναζήτηση πραγματικών barcodes από Open Food Facts</span>
       </div>
     </div>
 
@@ -133,7 +145,7 @@
               <button id="stopScanBtn" class="light">Κλείσιμο κάμερας</button>
             </div>
             <div id="reader" class="hidden"></div>
-            <div class="small muted">Δοκιμαστικά barcodes: 5200000000011, 5200000000028, 5200000000035</div>
+            <div class="small muted">Με το σκανάρισμα από κάμερα, η αναζήτηση γίνεται αυτόματα χωρίς να πατήσεις δεύτερο κουμπί.</div>
           </div>
         </div>
 
@@ -150,7 +162,7 @@
           <div class="stack">
             <input type="file" id="fileInput" accept=".csv,.json" />
             <div class="row">
-              <button id="loadDemoBtn" class="secondary">Γέμισε με demo ελληνικά προϊόντα</button>
+              <button id="loadDemoBtn" class="secondary">Γέμισε με 1000 demo ελληνικά προϊόντα</button>
               <button id="exportBtn" class="light">Εξαγωγή βάσης JSON</button>
               <button id="clearBtn" class="danger">Σβήσιμο τοπικής βάσης</button>
             </div>
@@ -196,16 +208,18 @@
               <tbody id="catalogTable"></tbody>
             </table>
           </div>
-          <div class="footer-note">Δείχνει τα πρώτα 50 προϊόντα της τοπικής βάσης.</div>
+          <div class="footer-note">Δείχνει τα πρώτα 50 προϊόντα της τοπικής βάσης. Όσα βρίσκονται από το internet αποθηκεύονται και αυτά τοπικά για επόμενη χρήση.</div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = "recycle_scan_products_v1";
+    const STORAGE_KEY = "recycle_scan_products_v2";
+    const OFF_ENDPOINT = "https://world.openfoodfacts.org/api/v0/product/";
     let html5QrCodeInstance = null;
     let scannerRunning = false;
+    let searchCounter = 0;
 
     const GREEK_RULES = {
       pet: {
@@ -285,7 +299,7 @@
       }
     };
 
-    function makeDemoCatalog(count = 300) {
+    function makeDemoCatalog(count = 1000) {
       const templates = [
         ["Νερό Πηγής", "Demo Aqua", ["pet"], ["Μπουκάλι: PET", "Καπάκι: PP", "Ετικέτα: πλαστική"]],
         ["Ανθρακούχο Νερό", "Demo Spark", ["pet"], ["Μπουκάλι: PET", "Καπάκι: PP", "Ετικέτα: πλαστική"]],
@@ -396,6 +410,37 @@
       return out;
     }
 
+    function normalizeOffProduct(barcode, product) {
+      const packagingText = [
+        product.packaging,
+        product.packaging_text,
+        product.packaging_old,
+        product.packaging_en
+      ].filter(Boolean).join(", ");
+      const lower = packagingText.toLowerCase();
+      const materials = [];
+      if (/(pet|polyethylene terephthalate|plastic bottle|μπουκάλι πλαστικό)/.test(lower)) materials.push("pet");
+      if (/hdpe/.test(lower)) materials.push("hdpe");
+      if (/(glass|γυαλί|verre)/.test(lower)) materials.push("glass");
+      if (/(aluminium|aluminum|αλουμ|alu)/.test(lower)) materials.push("aluminum");
+      if (/(paper|cardboard|χαρτ|carton)/.test(lower)) materials.push("paper");
+      if (/(tetra|tetrapak)/.test(lower)) materials.push("tetrapak");
+      if (/(mixed|multi|composite|σύνθετ)/.test(lower)) materials.push("mixed");
+      return {
+        barcode,
+        product_name: product.product_name || product.product_name_el || "Άγνωστο προϊόν",
+        brands: product.brands || "Άγνωστη μάρκα",
+        materials: materials.length ? [...new Set(materials)] : ["unknown"],
+        packaging: packagingText ? packagingText.split(",").map(x => x.trim()).filter(Boolean).slice(0, 8) : ["Δεν βρέθηκαν λεπτομέρειες συσκευασίας"],
+        source: "openfoodfacts-live"
+      };
+    }
+
+    function showLoading(barcode) {
+      const result = document.getElementById("result");
+      result.innerHTML = `<div class="muted"><span class="spinner"></span>Ψάχνω προϊόν για barcode ${barcode}...</div>`;
+    }
+
     function renderResult(product, barcode) {
       const result = document.getElementById("result");
       if (!product) {
@@ -450,6 +495,14 @@
       `).join("");
     }
 
+    async function fetchLiveProduct(barcode) {
+      const response = await fetch(`${OFF_ENDPOINT}${barcode}.json`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (data.status !== 1 || !data.product) return null;
+      return normalizeOffProduct(barcode, data.product);
+    }
+
     async function startScanner() {
       const reader = document.getElementById("reader");
       reader.classList.remove("hidden");
@@ -463,10 +516,10 @@
         await html5QrCodeInstance.start(
           { facingMode: "environment" },
           { fps: 10, qrbox: 220, aspectRatio: 1.5 },
-          (decodedText) => {
+          async (decodedText) => {
             document.getElementById("barcodeInput").value = decodedText;
-            searchProduct();
-            stopScanner();
+            await searchProduct(decodedText);
+            await stopScanner();
           },
           () => {}
         );
@@ -490,10 +543,34 @@
       reader.innerHTML = "";
     }
 
-    function searchProduct() {
-      const barcode = document.getElementById("barcodeInput").value.replace(/\D/g, "");
+    async function searchProduct(forcedBarcode = null) {
+      const requestId = ++searchCounter;
+      const barcode = String(forcedBarcode || document.getElementById("barcodeInput").value).replace(/\D/g, "");
+      if (!barcode) {
+        renderResult(null, "");
+        return;
+      }
+
       const products = getAllProducts();
-      renderResult(products[barcode], barcode);
+      if (products[barcode]) {
+        renderResult(products[barcode], barcode);
+        return;
+      }
+
+      showLoading(barcode);
+      try {
+        const liveProduct = await fetchLiveProduct(barcode);
+        if (requestId !== searchCounter) return;
+        if (liveProduct) {
+          mergeProducts({ [barcode]: liveProduct });
+          renderResult(liveProduct, barcode);
+        } else {
+          renderResult(null, barcode);
+        }
+      } catch {
+        if (requestId !== searchCounter) return;
+        renderResult(null, barcode);
+      }
     }
 
     function saveManualProduct() {
@@ -561,7 +638,7 @@
       alert("Η τοπική βάση διαγράφηκε.");
     }
 
-    document.getElementById("searchBtn").addEventListener("click", searchProduct);
+    document.getElementById("searchBtn").addEventListener("click", () => searchProduct());
     document.getElementById("startScanBtn").addEventListener("click", startScanner);
     document.getElementById("stopScanBtn").addEventListener("click", stopScanner);
     document.getElementById("saveProductBtn").addEventListener("click", saveManualProduct);
@@ -574,6 +651,10 @@
     document.getElementById("fileInput").addEventListener("change", (e) => handleFileUpload(e.target.files[0]));
     document.getElementById("barcodeInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") searchProduct();
+    });
+    document.getElementById("barcodeInput").addEventListener("input", (e) => {
+      const value = e.target.value.replace(/\D/g, "");
+      if (value.length >= 8) searchProduct(value);
     });
 
     updateCatalogTable();
