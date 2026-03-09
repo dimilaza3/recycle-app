@@ -13,12 +13,11 @@
       --muted: #6b7280;
       --line: #e5e7eb;
       --accent: #0f766e;
-      --accent-2: #0ea5a4;
       --danger: #b91c1c;
       --ok: #166534;
       --warn: #92400e;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; scroll-behavior: smooth; }
     body {
       margin: 0;
       font-family: Arial, Helvetica, sans-serif;
@@ -73,7 +72,6 @@
       color: var(--text);
       border: 1px solid var(--line);
     }
-    button.warn { background: #b45309; }
     button.danger { background: var(--danger); }
     .pill {
       display: inline-block;
@@ -100,7 +98,7 @@
     .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 14px; }
     table { width: 100%; border-collapse: collapse; background: white; }
     th, td { padding: 10px; border-bottom: 1px solid var(--line); text-align: left; font-size: 14px; }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
     #reader { width: 100%; max-width: 420px; margin: 10px auto 0; }
     .footer-note { margin-top: 12px; font-size: 13px; color: var(--muted); }
     .spinner {
@@ -113,6 +111,16 @@
       animation: spin 1s linear infinite;
       vertical-align: middle;
       margin-right: 8px;
+    }
+    .scanner-box {
+      border: 2px dashed #94a3b8;
+      border-radius: 16px;
+      padding: 10px;
+      background: #fff;
+    }
+    .highlight {
+      border: 2px solid #34d399;
+      box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15);
     }
     @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width: 860px) {
@@ -135,7 +143,7 @@
 
     <div class="grid">
       <div class="stack">
-        <div class="card">
+        <div class="card" id="lookupSection">
           <h2>Έλεγχος barcode</h2>
           <div class="stack">
             <input id="barcodeInput" placeholder="Βάλε barcode ή σκάναρέ το" />
@@ -144,12 +152,14 @@
               <button id="startScanBtn" class="secondary">Άνοιγμα κάμερας</button>
               <button id="stopScanBtn" class="light">Κλείσιμο κάμερας</button>
             </div>
-            <div id="reader" class="hidden"></div>
-            <div class="small muted">Με το σκανάρισμα από κάμερα, η αναζήτηση γίνεται αυτόματα χωρίς να πατήσεις δεύτερο κουμπί.</div>
+            <div id="scannerBox" class="scanner-box hidden">
+              <div id="reader"></div>
+              <div class="small muted">Στόχευσε καθαρά το barcode. Μόλις το διαβάσει, κάνει μόνο του αναζήτηση και πηγαίνει στο αποτέλεσμα.</div>
+            </div>
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="resultSection">
           <h2>Αποτέλεσμα</h2>
           <div id="result" class="result">
             <div class="muted">Περίμενω barcode...</div>
@@ -172,8 +182,9 @@
       </div>
 
       <div class="stack">
-        <div class="card">
+        <div class="card" id="manualSection">
           <h2>Προσθήκη νέου προϊόντος</h2>
+          <p id="manualHint" class="muted small">Χρησιμοποίησέ το όταν ένα barcode δεν βρεθεί.</p>
           <div class="stack">
             <input id="newBarcode" placeholder="Barcode" />
             <input id="newName" placeholder="Όνομα προϊόντος" />
@@ -215,88 +226,29 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "recycle_scan_products_v2";
+    const STORAGE_KEY = "recycle_scan_products_v3";
     const OFF_ENDPOINT = "https://world.openfoodfacts.org/api/v0/product/";
     let html5QrCodeInstance = null;
     let scannerRunning = false;
     let searchCounter = 0;
+    let lastScannedCode = "";
+    let lastScanTime = 0;
 
     const GREEK_RULES = {
-      pet: {
-        label: "PET πλαστικό",
-        bin: "Μπλε κάδος",
-        status: "ok",
-        notes: ["Άδειασε το προϊόν", "Σύνθλιψε το μπουκάλι αν γίνεται", "Το καπάκι συνήθως πάει μαζί στον μπλε κάδο"]
-      },
-      hdpe: {
-        label: "HDPE πλαστικό",
-        bin: "Μπλε κάδος",
-        status: "ok",
-        notes: ["Ξέπλυμα αν έχει υπολείμματα"]
-      },
-      glass: {
-        label: "Γυαλί",
-        bin: "Κώδωνας γυαλιού ή μπλε κάδος όπου επιτρέπεται",
-        status: "ok",
-        notes: ["Πρόσεχε αν είναι σπασμένο", "Αφαίρεσε ό,τι δεν είναι γυαλί αν γίνεται"]
-      },
-      aluminum: {
-        label: "Αλουμίνιο",
-        bin: "Μπλε κάδος",
-        status: "ok",
-        notes: ["Σύνθλιψε το κουτάκι", "Ξέπλυμα αν έχει υπολείμματα"]
-      },
-      paper: {
-        label: "Χαρτί / χαρτόνι",
-        bin: "Μπλε κάδος",
-        status: "ok",
-        notes: ["Να είναι καθαρό", "Χαρτί με λάδια συνήθως όχι"]
-      },
-      tetrapak: {
-        label: "Tetrapak",
-        bin: "Μπλε κάδος",
-        status: "ok",
-        notes: ["Άδειασε και δίπλωσέ το"]
-      },
-      mixed: {
-        label: "Μικτό υλικό",
-        bin: "Έλεγχος ανά μέρος συσκευασίας",
-        status: "warn",
-        notes: ["Χώρισε τα μέρη της συσκευασίας αν γίνεται"]
-      },
-      unknown: {
-        label: "Άγνωστο υλικό",
-        bin: "Χρειάζεται έλεγχος",
-        status: "danger",
-        notes: ["Δεν υπάρχουν αρκετά στοιχεία"]
-      }
+      pet: { label: "PET πλαστικό", bin: "Μπλε κάδος", status: "ok", notes: ["Άδειασε το προϊόν", "Σύνθλιψε το μπουκάλι αν γίνεται", "Το καπάκι συνήθως πάει μαζί στον μπλε κάδο"] },
+      hdpe: { label: "HDPE πλαστικό", bin: "Μπλε κάδος", status: "ok", notes: ["Ξέπλυμα αν έχει υπολείμματα"] },
+      glass: { label: "Γυαλί", bin: "Κώδωνας γυαλιού ή μπλε κάδος όπου επιτρέπεται", status: "ok", notes: ["Πρόσεχε αν είναι σπασμένο", "Αφαίρεσε ό,τι δεν είναι γυαλί αν γίνεται"] },
+      aluminum: { label: "Αλουμίνιο", bin: "Μπλε κάδος", status: "ok", notes: ["Σύνθλιψε το κουτάκι", "Ξέπλυμα αν έχει υπολείμματα"] },
+      paper: { label: "Χαρτί / χαρτόνι", bin: "Μπλε κάδος", status: "ok", notes: ["Να είναι καθαρό", "Χαρτί με λάδια συνήθως όχι"] },
+      tetrapak: { label: "Tetrapak", bin: "Μπλε κάδος", status: "ok", notes: ["Άδειασε και δίπλωσέ το"] },
+      mixed: { label: "Μικτό υλικό", bin: "Έλεγχος ανά μέρος συσκευασίας", status: "warn", notes: ["Χώρισε τα μέρη της συσκευασίας αν γίνεται"] },
+      unknown: { label: "Άγνωστο υλικό", bin: "Χρειάζεται έλεγχος", status: "danger", notes: ["Δεν υπάρχουν αρκετά στοιχεία"] }
     };
 
     const DEMO_PRODUCTS = {
-      "5200000000011": {
-        barcode: "5200000000011",
-        product_name: "Νερό Πηγής 1.5L",
-        brands: "Demo Aqua",
-        materials: ["pet"],
-        packaging: ["Μπουκάλι: PET", "Καπάκι: PP", "Ετικέτα: πλαστική"],
-        source: "demo"
-      },
-      "5200000000028": {
-        barcode: "5200000000028",
-        product_name: "Πορτοκαλάδα 330ml",
-        brands: "Demo Refresh",
-        materials: ["aluminum"],
-        packaging: ["Κουτάκι: αλουμίνιο"],
-        source: "demo"
-      },
-      "5200000000035": {
-        barcode: "5200000000035",
-        product_name: "Μπύρα Lager 500ml",
-        brands: "Demo Brew",
-        materials: ["glass"],
-        packaging: ["Μπουκάλι: γυαλί", "Καπάκι: μέταλλο", "Ετικέτα: χαρτί"],
-        source: "demo"
-      }
+      "5200000000011": { barcode: "5200000000011", product_name: "Νερό Πηγής 1.5L", brands: "Demo Aqua", materials: ["pet"], packaging: ["Μπουκάλι: PET", "Καπάκι: PP", "Ετικέτα: πλαστική"], source: "demo" },
+      "5200000000028": { barcode: "5200000000028", product_name: "Πορτοκαλάδα 330ml", brands: "Demo Refresh", materials: ["aluminum"], packaging: ["Κουτάκι: αλουμίνιο"], source: "demo" },
+      "5200000000035": { barcode: "5200000000035", product_name: "Μπύρα Lager 500ml", brands: "Demo Brew", materials: ["glass"], packaging: ["Μπουκάλι: γυαλί", "Καπάκι: μέταλλο", "Ετικέτα: χαρτί"], source: "demo" }
     };
 
     function makeDemoCatalog(count = 1000) {
@@ -319,14 +271,7 @@
         const base = `520${String(i).padStart(9, "0")}`;
         const check = ean13CheckDigit(base);
         const barcode = base + check;
-        out[barcode] = {
-          barcode,
-          product_name: `${t[0]} ${sizes[(i - 1) % sizes.length]}`,
-          brands: t[1],
-          materials: [...t[2]],
-          packaging: [...t[3]],
-          source: "generated-demo"
-        };
+        out[barcode] = { barcode, product_name: `${t[0]} ${sizes[(i - 1) % sizes.length]}`, brands: t[1], materials: [...t[2]], packaging: [...t[3]], source: "generated-demo" };
       }
       return out;
     }
@@ -341,11 +286,8 @@
     }
 
     function getStoredProducts() {
-      try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      } catch {
-        return {};
-      }
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch { return {}; }
     }
 
     function setStoredProducts(data) {
@@ -411,12 +353,7 @@
     }
 
     function normalizeOffProduct(barcode, product) {
-      const packagingText = [
-        product.packaging,
-        product.packaging_text,
-        product.packaging_old,
-        product.packaging_en
-      ].filter(Boolean).join(", ");
+      const packagingText = [product.packaging, product.packaging_text, product.packaging_old, product.packaging_en].filter(Boolean).join(", ");
       const lower = packagingText.toLowerCase();
       const materials = [];
       if (/(pet|polyethylene terephthalate|plastic bottle|μπουκάλι πλαστικό)/.test(lower)) materials.push("pet");
@@ -439,14 +376,37 @@
     function showLoading(barcode) {
       const result = document.getElementById("result");
       result.innerHTML = `<div class="muted"><span class="spinner"></span>Ψάχνω προϊόν για barcode ${barcode}...</div>`;
+      scrollToResult();
+    }
+
+    function scrollToResult() {
+      document.getElementById("resultSection").scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("resultSection").classList.add("highlight");
+      setTimeout(() => document.getElementById("resultSection").classList.remove("highlight"), 1800);
+    }
+
+    function openManualForBarcode(barcode) {
+      document.getElementById("manualSection").scrollIntoView({ behavior: "smooth", block: "start" });
+      document.getElementById("manualSection").classList.add("highlight");
+      setTimeout(() => document.getElementById("manualSection").classList.remove("highlight"), 1800);
+      document.getElementById("newBarcode").value = barcode || "";
+      document.getElementById("newName").focus();
+      document.getElementById("manualHint").textContent = "Το προϊόν δεν βρέθηκε. Συμπλήρωσε τα πεδία παρακάτω για να το προσθέσεις εσύ.";
     }
 
     function renderResult(product, barcode) {
       const result = document.getElementById("result");
       if (!product) {
-        result.innerHTML = `<div class="danger-text">❌ Δεν βρέθηκε προϊόν</div><p class="muted">Barcode: ${barcode || "-"}</p><p class="small">Μπορείς να το προσθέσεις από τη φόρμα δεξιά.</p>`;
+        result.innerHTML = `
+          <div class="danger-text">❌ Δεν βρέθηκε προϊόν</div>
+          <p class="muted">Barcode: ${barcode || "-"}</p>
+          <p class="small">Δεν βρέθηκε ούτε στην τοπική βάση ούτε online. Συμπλήρωσε αμέσως τα πεδία δεξιά για να το προσθέσεις.</p>
+        `;
+        scrollToResult();
+        openManualForBarcode(barcode);
         return;
       }
+      document.getElementById("manualHint").textContent = "Χρησιμοποίησέ το όταν ένα barcode δεν βρεθεί.";
       const rules = product.materials.map(m => GREEK_RULES[m] || GREEK_RULES.unknown);
       const bins = [...new Set(rules.map(r => r.bin))];
       const notes = [...new Set(rules.flatMap(r => r.notes))];
@@ -471,6 +431,7 @@
         <div class="small" style="margin-top:10px;"><strong>Συσκευασία:</strong><ul>${product.packaging.map(x => `<li>${x}</li>`).join("")}</ul></div>
         <div class="small" style="margin-top:10px;"><strong>Οδηγίες:</strong><ul>${notes.map(x => `<li>${x}</li>`).join("")}</ul></div>
       `;
+      scrollToResult();
     }
 
     function updateImportStatus() {
@@ -504,8 +465,8 @@
     }
 
     async function startScanner() {
-      const reader = document.getElementById("reader");
-      reader.classList.remove("hidden");
+      const scannerBox = document.getElementById("scannerBox");
+      scannerBox.classList.remove("hidden");
       if (scannerRunning) return;
       if (!window.Html5Qrcode) {
         alert("Δεν φορτώθηκε η βιβλιοθήκη κάμερας. Κάνε ανανέωση της σελίδας.");
@@ -513,24 +474,53 @@
       }
       html5QrCodeInstance = new Html5Qrcode("reader");
       try {
+        const config = {
+          fps: 12,
+          qrbox: { width: 260, height: 140 },
+          aspectRatio: 1.7778,
+          rememberLastUsedCamera: true,
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+        };
         await html5QrCodeInstance.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 220, aspectRatio: 1.5 },
+          { facingMode: { exact: "environment" } },
+          config,
           async (decodedText) => {
+            const now = Date.now();
+            if (decodedText === lastScannedCode && now - lastScanTime < 2500) return;
+            lastScannedCode = decodedText;
+            lastScanTime = now;
             document.getElementById("barcodeInput").value = decodedText;
-            await searchProduct(decodedText);
             await stopScanner();
+            await searchProduct(decodedText);
           },
           () => {}
         );
         scannerRunning = true;
-      } catch (err) {
-        alert("Δεν άνοιξε η κάμερα. Δώσε άδεια κάμερας και δοκίμασε ξανά.");
+      } catch {
+        try {
+          await html5QrCodeInstance.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 220, aspectRatio: 1.5 },
+            async (decodedText) => {
+              const now = Date.now();
+              if (decodedText === lastScannedCode && now - lastScanTime < 2500) return;
+              lastScannedCode = decodedText;
+              lastScanTime = now;
+              document.getElementById("barcodeInput").value = decodedText;
+              await stopScanner();
+              await searchProduct(decodedText);
+            },
+            () => {}
+          );
+          scannerRunning = true;
+        } catch {
+          alert("Δεν άνοιξε σωστά η κάμερα ή δεν διαβάζεται το barcode. Δώσε άδεια κάμερας και δοκίμασε με καλό φωτισμό.");
+        }
       }
     }
 
     async function stopScanner() {
-      const reader = document.getElementById("reader");
+      const scannerBox = document.getElementById("scannerBox");
       if (html5QrCodeInstance && scannerRunning) {
         try {
           await html5QrCodeInstance.stop();
@@ -539,8 +529,8 @@
       }
       html5QrCodeInstance = null;
       scannerRunning = false;
-      reader.classList.add("hidden");
-      reader.innerHTML = "";
+      scannerBox.classList.add("hidden");
+      document.getElementById("reader").innerHTML = "";
     }
 
     async function searchProduct(forcedBarcode = null) {
@@ -585,20 +575,15 @@
       }
       const packaging = packagingRaw ? packagingRaw.split(",").map(x => x.trim()).filter(Boolean) : [`Συσκευασία: ${material}`];
       mergeProducts({
-        [barcode]: {
-          barcode,
-          product_name,
-          brands,
-          materials: [material],
-          packaging,
-          source: "manual"
-        }
+        [barcode]: { barcode, product_name, brands, materials: [material], packaging, source: "manual" }
       });
+      renderResult(getAllProducts()[barcode], barcode);
       alert("Το προϊόν αποθηκεύτηκε.");
       document.getElementById("newBarcode").value = "";
       document.getElementById("newName").value = "";
       document.getElementById("newBrand").value = "";
       document.getElementById("newPackaging").value = "";
+      document.getElementById("manualHint").textContent = "Χρησιμοποίησέ το όταν ένα barcode δεν βρεθεί.";
     }
 
     function handleFileUpload(file) {
@@ -651,10 +636,6 @@
     document.getElementById("fileInput").addEventListener("change", (e) => handleFileUpload(e.target.files[0]));
     document.getElementById("barcodeInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter") searchProduct();
-    });
-    document.getElementById("barcodeInput").addEventListener("input", (e) => {
-      const value = e.target.value.replace(/\D/g, "");
-      if (value.length >= 8) searchProduct(value);
     });
 
     updateCatalogTable();
