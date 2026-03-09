@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Recycle Scanner</title>
+<style>
+body{
+font-family:Arial;
+text-align:center;
+padding:40px;
+background:#f5f5f5;
+}
+
+button{
+padding:15px;
+font-size:18px;
+margin-top:20px;
+}
+
+#result{
+margin-top:30px;
+font-size:22px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>♻️ Recycle Scanner</h1>
+
+<p>Σκάναρε barcode προϊόντος</p>
+
+<input id="barcode" placeholder="Βάλε barcode">
+
+<br>
+
+<button onclick="check()">Έλεγχος</button>
+
+<div id="result"></div>
+
+<script>
+
+const products = {
+"5200000000011":{
+name:"Νερό Πηγής",
+recycle:"Πλαστικό - Μπλε κάδος"
+},
+
+"5200000000028":{
+name:"Πορτοκαλάδα",
+recycle:"Αλουμίνιο - Μπλε κάδος"
+},
+
+"5200000000035":{
+name:"Μπύρα",
+recycle:"Γυαλί - Μπλε κάδος"
+}
+}
+
+function check(){
+
+const code=document.getElementById("barcode").value
+const result=document.getElementById("result")
+
+if(products[code]){
+result.innerHTML="✔ "+products[code].name+"<br>"+products[code].recycle
+}else{
+result.innerHTML="❌ Δεν βρέθηκε προϊόν"
+}
+
+}
+
+</script>
+
+</body>
+</html>
