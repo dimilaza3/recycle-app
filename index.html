@@ -19,25 +19,69 @@
       --warn: #92400e;
     }
     * { box-sizing: border-box; scroll-behavior: smooth; }
-    body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: var(--bg); color: var(--text); }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
     .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
-    .hero { background: linear-gradient(135deg, #ccfbf1, #ecfeff); border: 1px solid #b6f0ea; border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+    .hero {
+      background: linear-gradient(135deg, #ccfbf1, #ecfeff);
+      border: 1px solid #b6f0ea;
+      border-radius: 20px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
     h1, h2, h3 { margin: 0 0 10px; }
     p { margin: 0 0 10px; }
     .grid { display: grid; gap: 16px; grid-template-columns: 1.1fr 1fr; }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
     .row { display: flex; gap: 10px; flex-wrap: wrap; }
     .stack { display: grid; gap: 10px; }
-    input, textarea, select, button { width: 100%; border-radius: 12px; border: 1px solid var(--line); padding: 12px; font-size: 16px; }
-    button { cursor: pointer; background: var(--accent); color: white; border: none; font-weight: 700; }
+    input, textarea, select, button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      padding: 12px;
+      font-size: 16px;
+    }
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-weight: 700;
+    }
     button.secondary { background: #334155; }
     button.light { background: white; color: var(--text); border: 1px solid var(--line); }
     button.danger { background: var(--danger); }
-    .pill { display: inline-block; padding: 8px 12px; background: #ecfeff; border: 1px solid #bae6fd; border-radius: 999px; font-size: 14px; margin: 4px 6px 0 0; }
+    .pill {
+      display: inline-block;
+      padding: 8px 12px;
+      background: #ecfeff;
+      border: 1px solid #bae6fd;
+      border-radius: 999px;
+      font-size: 14px;
+      margin: 4px 6px 0 0;
+    }
     .muted { color: var(--muted); }
+    .ok { color: var(--ok); font-weight: 700; }
     .warn-text { color: var(--warn); font-weight: 700; }
     .danger-text { color: var(--danger); font-weight: 700; }
-    .result { border: 1px solid var(--line); background: #f8fafc; border-radius: 16px; padding: 14px; min-height: 140px; }
+    .result {
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 16px;
+      padding: 14px;
+      min-height: 140px;
+    }
     .small { font-size: 14px; }
     ul { margin: 8px 0 0 18px; padding: 0; }
     .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 14px; }
@@ -46,7 +90,11 @@
     .hidden { display: none !important; }
     #reader { width: 100%; max-width: 420px; margin: 10px auto 0; }
     .footer-note { margin-top: 12px; font-size: 13px; color: var(--muted); }
-    .spinner { width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: var(--accent); border-radius: 50%; display: inline-block; animation: spin 1s linear infinite; vertical-align: middle; margin-right: 8px; }
+    .spinner {
+      width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: var(--accent);
+      border-radius: 50%; display: inline-block; animation: spin 1s linear infinite;
+      vertical-align: middle; margin-right: 8px;
+    }
     .scanner-box { border: 2px dashed #94a3b8; border-radius: 16px; padding: 10px; background: #fff; }
     .highlight { border: 2px solid #34d399; box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15); }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -57,12 +105,12 @@
   <div class="wrap">
     <div class="hero">
       <h1>♻️ Recycle Scan Greece</h1>
-      <p>Web εφαρμογή για έλεγχο barcode, οδηγίες ανακύκλωσης, online βάση προϊόντων με Supabase, εισαγωγή CSV/JSON και σκανάρισμα με κάμερα από κινητό.</p>
+      <p>Web εφαρμογή για έλεγχο barcode, οδηγίες ανακύκλωσης, τοπική βάση προϊόντων, εισαγωγή CSV/JSON και σκανάρισμα με κάμερα από κινητό.</p>
       <div class="row">
         <span class="pill">Δουλεύει σε browser</span>
+        <span class="pill">Δεν θέλει Play Store</span>
         <span class="pill">Σκανάρισμα με κάμερα</span>
-        <span class="pill">Online βάση προϊόντων</span>
-        <span class="pill">Αναζήτηση πραγματικών barcodes από Open Food Facts</span>
+        <span class="pill">Supabase + Open Food Facts</span>
       </div>
     </div>
 
@@ -93,7 +141,7 @@
 
         <div class="card">
           <h2>Μαζική εισαγωγή προϊόντων</h2>
-          <p class="muted small">Μπορείς να ανεβάσεις αρχείο CSV ή JSON. Τα προϊόντα αποθηκεύονται στον browser σου και επιχειρείται αποθήκευση και online.</p>
+          <p class="muted small">Μπορείς να ανεβάσεις αρχείο CSV ή JSON. Τα προϊόντα αποθηκεύονται στον browser σου και συγχρονίζονται με το cloud.</p>
           <div class="stack">
             <input type="file" id="fileInput" accept=".csv,.json" />
             <div class="row">
@@ -134,24 +182,19 @@
           <div class="table-wrap">
             <table>
               <thead>
-                <tr>
-                  <th>Barcode</th>
-                  <th>Προϊόν</th>
-                  <th>Μάρκα</th>
-                  <th>Υλικό</th>
-                </tr>
+                <tr><th>Barcode</th><th>Προϊόν</th><th>Μάρκα</th><th>Υλικό</th></tr>
               </thead>
               <tbody id="catalogTable"></tbody>
             </table>
           </div>
-          <div class="footer-note">Δείχνει τα πρώτα 50 προϊόντα της τοπικής βάσης. Όσα βρίσκονται online αποθηκεύονται και τοπικά για πιο γρήγορη επόμενη χρήση.</div>
+          <div class="footer-note">Δείχνει τα πρώτα 50 προϊόντα της τοπικής βάσης. Όσα βρίσκονται online αποθηκεύονται τοπικά και στο cloud.</div>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    const STORAGE_KEY = "recycle_scan_products_v4";
+    const STORAGE_KEY = "recycle_scan_products_v5";
     const OFF_ENDPOINT = "https://world.openfoodfacts.org/api/v0/product/";
     const SUPABASE_URL = "https://pmhfjyaxqfjgwohvfsyk.supabase.co";
     const SUPABASE_KEY = "sb_publishable_0JrHTp1dB-aQrZl-VeBHKQ_lxiEwE9B";
@@ -197,7 +240,8 @@
       for (let i = 1; i <= count; i++) {
         const t = templates[(i - 1) % templates.length];
         const base = `520${String(i).padStart(9, "0")}`;
-        const barcode = base + ean13CheckDigit(base);
+        const check = ean13CheckDigit(base);
+        const barcode = base + check;
         out[barcode] = { barcode, product_name: `${t[0]} ${sizes[(i - 1) % sizes.length]}`, brands: t[1], materials: [...t[2]], packaging: [...t[3]], source: "generated-demo" };
       }
       return out;
@@ -205,18 +249,31 @@
 
     function ean13CheckDigit(firstTwelve) {
       let total = 0;
-      for (let i = 0; i < firstTwelve.length; i++) total += i % 2 === 0 ? Number(firstTwelve[i]) : Number(firstTwelve[i]) * 3;
+      for (let i = 0; i < firstTwelve.length; i++) {
+        const digit = Number(firstTwelve[i]);
+        total += i % 2 === 0 ? digit : digit * 3;
+      }
       return String((10 - (total % 10)) % 10);
     }
 
     function getStoredProducts() {
-      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+      catch { return {}; }
     }
 
     function setStoredProducts(data) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       updateCatalogTable();
       updateImportStatus();
+    }
+
+    function mergeProducts(newProducts) {
+      const current = getStoredProducts();
+      setStoredProducts({ ...current, ...newProducts });
+    }
+
+    function getAllProducts() {
+      return { ...DEMO_PRODUCTS, ...getStoredProducts() };
     }
 
     function normalizeDbProduct(row) {
@@ -232,17 +289,14 @@
     }
 
     async function fetchProductFromSupabase(barcode) {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select("barcode, product_name, brand, materials, packaging, recycling_bin, source")
-        .eq("barcode", barcode)
-        .maybeSingle();
+      const { data, error } = await supabaseClient.from("products").select("barcode, product_name, brand, materials, packaging, recycling_bin, source").eq("barcode", barcode).maybeSingle();
       if (error) return null;
       return data ? normalizeDbProduct(data) : null;
     }
 
     function inferRecyclingBin(materials) {
-      return [...new Set((materials || []).map(m => (GREEK_RULES[m] || GREEK_RULES.unknown).bin))].join(" / ");
+      const bins = [...new Set((materials || []).map(m => (GREEK_RULES[m] || GREEK_RULES.unknown).bin))];
+      return bins.join(" / ");
     }
 
     async function upsertProductToSupabase(product) {
@@ -263,12 +317,15 @@
       try { await supabaseClient.from("scan_logs").insert({ barcode, found, source: source || null }); } catch {}
     }
 
+    async function syncLocalProductsToSupabase() {
+      const local = Object.values(getStoredProducts());
+      for (const item of local.slice(0, 200)) {
+        await upsertProductToSupabase(item);
+      }
+    }
+
     async function loadSomeProductsFromSupabase() {
-      const { data, error } = await supabaseClient
-        .from("products")
-        .select("barcode, product_name, brand, materials, packaging, recycling_bin, source")
-        .order("created_at", { ascending: false })
-        .limit(50);
+      const { data, error } = await supabaseClient.from("products").select("barcode, product_name, brand, materials, packaging, recycling_bin, source").order("created_at", { ascending: false }).limit(50);
       if (!error && Array.isArray(data) && data.length) {
         const merged = { ...getStoredProducts() };
         for (const row of data) {
@@ -279,19 +336,6 @@
       }
     }
 
-    async function syncLocalProductsToSupabase() {
-      const local = Object.values(getStoredProducts()).slice(0, 200);
-      for (const item of local) await upsertProductToSupabase(item);
-    }
-
-    function mergeProducts(newProducts) {
-      setStoredProducts({ ...getStoredProducts(), ...newProducts });
-    }
-
-    function getAllProducts() {
-      return { ...DEMO_PRODUCTS, ...getStoredProducts() };
-    }
-
     function parseCsv(text) {
       const lines = text.trim().split(/\r?\n/).filter(Boolean);
       if (!lines.length) return {};
@@ -299,7 +343,7 @@
       const headers = lines[0].split(separator).map(x => x.trim());
       const idxBarcode = headers.findIndex(h => ["barcode", "ean", "gtin", "code"].includes(h.toLowerCase()));
       const idxName = headers.findIndex(h => h.toLowerCase() === "product_name");
-      const idxBrand = headers.findIndex(h => ["brand", "brands"].includes(h.toLowerCase()));
+      const idxBrand = headers.findIndex(h => h.toLowerCase() === "brand" || h.toLowerCase() === "brands");
       const idxMaterials = headers.findIndex(h => h.toLowerCase() === "materials");
       if (idxBarcode === -1) throw new Error("Το CSV πρέπει να έχει στήλη barcode/ean/gtin/code");
       const out = {};
@@ -308,7 +352,14 @@
         const barcode = String(cols[idxBarcode] || "").replace(/\D/g, "");
         if (!barcode) continue;
         const materials = String(cols[idxMaterials] || "unknown").split("|").join(",").split(",").map(x => x.trim()).filter(Boolean);
-        out[barcode] = { barcode, product_name: (cols[idxName] || `Προϊόν ${i}`).trim(), brands: (cols[idxBrand] || "Τοπική βάση").trim(), materials: materials.length ? materials : ["unknown"], packaging: (materials.length ? materials : ["unknown"]).map(x => `Συσκευασία: ${x}`), source: "csv-import" };
+        out[barcode] = {
+          barcode,
+          product_name: (cols[idxName] || `Προϊόν ${i}`).trim(),
+          brands: (cols[idxBrand] || "Τοπική βάση").trim(),
+          materials: materials.length ? materials : ["unknown"],
+          packaging: (materials.length ? materials : ["unknown"]).map(x => `Συσκευασία: ${x}`),
+          source: "csv-import"
+        };
       }
       return out;
     }
@@ -320,7 +371,14 @@
       for (const item of arr) {
         const barcode = String(item.barcode || "").replace(/\D/g, "");
         if (!barcode) continue;
-        out[barcode] = { barcode, product_name: item.product_name || "Άγνωστο προϊόν", brands: item.brands || item.brand || "Τοπική βάση", materials: Array.isArray(item.materials) && item.materials.length ? item.materials : ["unknown"], packaging: Array.isArray(item.packaging) && item.packaging.length ? item.packaging : ["Δεν βρέθηκαν λεπτομέρειες συσκευασίας"], source: item.source || "json-import" };
+        out[barcode] = {
+          barcode,
+          product_name: item.product_name || "Άγνωστο προϊόν",
+          brands: item.brands || item.brand || "Τοπική βάση",
+          materials: Array.isArray(item.materials) && item.materials.length ? item.materials : ["unknown"],
+          packaging: Array.isArray(item.packaging) && item.packaging.length ? item.packaging : ["Δεν βρέθηκαν λεπτομέρειες συσκευασίας"],
+          source: item.source || "json-import"
+        };
       }
       return out;
     }
@@ -336,15 +394,20 @@
       if (/(paper|cardboard|χαρτ|carton)/.test(lower)) materials.push("paper");
       if (/(tetra|tetrapak)/.test(lower)) materials.push("tetrapak");
       if (/(mixed|multi|composite|σύνθετ)/.test(lower)) materials.push("mixed");
-      return { barcode, product_name: product.product_name || product.product_name_el || "Άγνωστο προϊόν", brands: product.brands || "Άγνωστη μάρκα", materials: materials.length ? [...new Set(materials)] : ["unknown"], packaging: packagingText ? packagingText.split(",").map(x => x.trim()).filter(Boolean).slice(0, 8) : ["Δεν βρέθηκαν λεπτομέρειες συσκευασίας"], source: "openfoodfacts-live" };
+      return {
+        barcode,
+        product_name: product.product_name || product.product_name_el || "Άγνωστο προϊόν",
+        brands: product.brands || "Άγνωστη μάρκα",
+        materials: materials.length ? [...new Set(materials)] : ["unknown"],
+        packaging: packagingText ? packagingText.split(",").map(x => x.trim()).filter(Boolean).slice(0, 8) : ["Δεν βρέθηκαν λεπτομέρειες συσκευασίας"],
+        source: "openfoodfacts-live"
+      };
     }
 
-    async function fetchLiveProduct(barcode) {
-      const response = await fetch(`${OFF_ENDPOINT}${barcode}.json`);
-      if (!response.ok) return null;
-      const data = await response.json();
-      if (data.status !== 1 || !data.product) return null;
-      return normalizeOffProduct(barcode, data.product);
+    function showLoading(barcode) {
+      const result = document.getElementById("result");
+      result.innerHTML = `<div class="muted"><span class="spinner"></span>Ψάχνω προϊόν για barcode ${barcode}...</div>`;
+      scrollToResult();
     }
 
     function scrollToResult() {
@@ -362,15 +425,14 @@
       document.getElementById("manualHint").textContent = "Το προϊόν δεν βρέθηκε. Συμπλήρωσε τα πεδία παρακάτω για να το προσθέσεις εσύ.";
     }
 
-    function showLoading(barcode) {
-      document.getElementById("result").innerHTML = `<div class="muted"><span class="spinner"></span>Ψάχνω προϊόν για barcode ${barcode}...</div>`;
-      scrollToResult();
-    }
-
     function renderResult(product, barcode) {
       const result = document.getElementById("result");
       if (!product) {
-        result.innerHTML = `<div class="danger-text">❌ Δεν βρέθηκε προϊόν</div><p class="muted">Barcode: ${barcode || "-"}</p><p class="small">Δεν βρέθηκε ούτε στην τοπική βάση ούτε online. Συμπλήρωσε αμέσως τα πεδία δεξιά για να το προσθέσεις.</p>`;
+        result.innerHTML = `
+          <div class="danger-text">❌ Δεν βρέθηκε προϊόν</div>
+          <p class="muted">Barcode: ${barcode || "-"}</p>
+          <p class="small">Δεν βρέθηκε ούτε στην τοπική βάση ούτε online. Συμπλήρωσε αμέσως τα πεδία δεξιά για να το προσθέσεις.</p>
+        `;
         scrollToResult();
         openManualForBarcode(barcode);
         return;
@@ -381,9 +443,14 @@
       const notes = [...new Set(rules.flatMap(r => r.notes))];
       const statuses = rules.map(r => r.status);
       let statusText = "Ανακυκλώνεται";
-      let statusClass = "";
-      if (statuses.includes("danger")) { statusText = "Δεν υπάρχουν αρκετά στοιχεία"; statusClass = "danger-text"; }
-      else if (statuses.includes("warn")) { statusText = "Μερικώς ανακυκλώνεται"; statusClass = "warn-text"; }
+      let statusClass = "ok";
+      if (statuses.includes("danger")) {
+        statusText = "Δεν υπάρχουν αρκετά στοιχεία";
+        statusClass = "danger-text";
+      } else if (statuses.includes("warn")) {
+        statusText = "Μερικώς ανακυκλώνεται";
+        statusClass = "warn-text";
+      }
       result.innerHTML = `
         <div class="${statusClass}">✔ ${statusText}</div>
         <h3>${product.product_name}</h3>
@@ -393,42 +460,89 @@
         <p><strong>Κάδος:</strong> ${bins.join(" / ")}</p>
         <div>${product.materials.map(m => `<span class="pill">${(GREEK_RULES[m] || GREEK_RULES.unknown).label}</span>`).join("")}</div>
         <div class="small" style="margin-top:10px;"><strong>Συσκευασία:</strong><ul>${product.packaging.map(x => `<li>${x}</li>`).join("")}</ul></div>
-        <div class="small" style="margin-top:10px;"><strong>Οδηγίες:</strong><ul>${notes.map(x => `<li>${x}</li>`).join("")}</ul></div>`;
+        <div class="small" style="margin-top:10px;"><strong>Οδηγίες:</strong><ul>${notes.map(x => `<li>${x}</li>`).join("")}</ul></div>
+      `;
       scrollToResult();
     }
 
     function updateImportStatus() {
-      document.getElementById("importStatus").textContent = `Τοπικά προϊόντα: ${Object.keys(getStoredProducts()).length}`;
+      const count = Object.keys(getStoredProducts()).length;
+      document.getElementById("importStatus").textContent = `Τοπικά προϊόντα: ${count}`;
     }
 
     function updateCatalogTable() {
       const tbody = document.getElementById("catalogTable");
       const items = Object.values(getStoredProducts()).slice(0, 50);
-      if (!items.length) { tbody.innerHTML = `<tr><td colspan="4" class="muted">Δεν υπάρχουν ακόμα τοπικά προϊόντα</td></tr>`; return; }
-      tbody.innerHTML = items.map(item => `<tr><td>${item.barcode}</td><td>${item.product_name}</td><td>${item.brands}</td><td>${item.materials.join(", ")}</td></tr>`).join("");
+      if (!items.length) {
+        tbody.innerHTML = `<tr><td colspan="4" class="muted">Δεν υπάρχουν ακόμα τοπικά προϊόντα</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td>${item.barcode}</td>
+          <td>${item.product_name}</td>
+          <td>${item.brands}</td>
+          <td>${item.materials.join(", ")}</td>
+        </tr>
+      `).join("");
+    }
+
+    async function fetchLiveProduct(barcode) {
+      const response = await fetch(`${OFF_ENDPOINT}${barcode}.json`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      if (data.status !== 1 || !data.product) return null;
+      return normalizeOffProduct(barcode, data.product);
     }
 
     async function startScanner() {
       const scannerBox = document.getElementById("scannerBox");
       scannerBox.classList.remove("hidden");
       if (scannerRunning) return;
-      if (!window.Html5Qrcode) { alert("Δεν φορτώθηκε η βιβλιοθήκη κάμερας. Κάνε ανανέωση της σελίδας."); return; }
+      if (!window.Html5Qrcode) {
+        alert("Δεν φορτώθηκε η βιβλιοθήκη κάμερας. Κάνε ανανέωση της σελίδας.");
+        return;
+      }
       html5QrCodeInstance = new Html5Qrcode("reader");
-      const onDetected = async (decodedText) => {
-        const now = Date.now();
-        if (decodedText === lastScannedCode && now - lastScanTime < 2500) return;
-        lastScannedCode = decodedText;
-        lastScanTime = now;
-        document.getElementById("barcodeInput").value = decodedText;
-        await stopScanner();
-        await searchProduct(decodedText);
-      };
       try {
-        await html5QrCodeInstance.start({ facingMode: { exact: "environment" } }, { fps: 12, qrbox: { width: 260, height: 140 }, aspectRatio: 1.7778 }, onDetected, () => {});
+        const config = {
+          fps: 12,
+          qrbox: { width: 260, height: 140 },
+          aspectRatio: 1.7778,
+          rememberLastUsedCamera: true,
+          supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+        };
+        await html5QrCodeInstance.start(
+          { facingMode: { exact: "environment" } },
+          config,
+          async (decodedText) => {
+            const now = Date.now();
+            if (decodedText === lastScannedCode && now - lastScanTime < 2500) return;
+            lastScannedCode = decodedText;
+            lastScanTime = now;
+            document.getElementById("barcodeInput").value = decodedText;
+            await stopScanner();
+            await searchProduct(decodedText);
+          },
+          () => {}
+        );
         scannerRunning = true;
       } catch {
         try {
-          await html5QrCodeInstance.start({ facingMode: "environment" }, { fps: 10, qrbox: 220, aspectRatio: 1.5 }, onDetected, () => {});
+          await html5QrCodeInstance.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 220, aspectRatio: 1.5 },
+            async (decodedText) => {
+              const now = Date.now();
+              if (decodedText === lastScannedCode && now - lastScanTime < 2500) return;
+              lastScannedCode = decodedText;
+              lastScanTime = now;
+              document.getElementById("barcodeInput").value = decodedText;
+              await stopScanner();
+              await searchProduct(decodedText);
+            },
+            () => {}
+          );
           scannerRunning = true;
         } catch {
           alert("Δεν άνοιξε σωστά η κάμερα ή δεν διαβάζεται το barcode. Δώσε άδεια κάμερας και δοκίμασε με καλό φωτισμό.");
@@ -439,7 +553,10 @@
     async function stopScanner() {
       const scannerBox = document.getElementById("scannerBox");
       if (html5QrCodeInstance && scannerRunning) {
-        try { await html5QrCodeInstance.stop(); await html5QrCodeInstance.clear(); } catch {}
+        try {
+          await html5QrCodeInstance.stop();
+          await html5QrCodeInstance.clear();
+        } catch {}
       }
       html5QrCodeInstance = null;
       scannerRunning = false;
@@ -450,7 +567,10 @@
     async function searchProduct(forcedBarcode = null) {
       const requestId = ++searchCounter;
       const barcode = String(forcedBarcode || document.getElementById("barcodeInput").value).replace(/\D/g, "");
-      if (!barcode) { renderResult(null, ""); return; }
+      if (!barcode) {
+        renderResult(null, "");
+        return;
+      }
 
       const products = getAllProducts();
       if (products[barcode]) {
@@ -479,7 +599,7 @@
           await logScan(barcode, true, "openfoodfacts-live");
         } else {
           renderResult(null, barcode);
-          await logScan(barcode, false, "not_found");
+          await logScan(barcode, false, "not-found");
         }
       } catch {
         if (requestId !== searchCounter) return;
@@ -494,13 +614,17 @@
       const brands = document.getElementById("newBrand").value.trim() || "Χειροκίνητη καταχώριση";
       const material = document.getElementById("newMaterial").value;
       const packagingRaw = document.getElementById("newPackaging").value.trim();
-      if (!barcode || !product_name) { alert("Βάλε barcode και όνομα προϊόντος."); return; }
+      if (!barcode || !product_name) {
+        alert("Βάλε barcode και όνομα προϊόντος.");
+        return;
+      }
       const packaging = packagingRaw ? packagingRaw.split(",").map(x => x.trim()).filter(Boolean) : [`Συσκευασία: ${material}`];
       const product = { barcode, product_name, brands, materials: [material], packaging, source: "manual" };
       mergeProducts({ [barcode]: product });
       await upsertProductToSupabase(product);
-      renderResult(getAllProducts()[barcode], barcode);
-      alert("Το προϊόν αποθηκεύτηκε και online.");
+      renderResult(product, barcode);
+      await logScan(barcode, true, "manual");
+      alert("Το προϊόν αποθηκεύτηκε.");
       document.getElementById("newBarcode").value = "";
       document.getElementById("newName").value = "";
       document.getElementById("newBrand").value = "";
@@ -511,12 +635,14 @@
     function handleFileUpload(file) {
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = (e) => {
         try {
           const text = e.target.result;
-          const parsed = file.name.toLowerCase().endsWith(".json") ? parseJson(text) : parseCsv(text);
+          let parsed = {};
+          if (file.name.toLowerCase().endsWith(".json")) parsed = parseJson(text);
+          else parsed = parseCsv(text);
           mergeProducts(parsed);
-          await syncLocalProductsToSupabase();
+          syncLocalProductsToSupabase();
           alert(`Έγινε εισαγωγή ${Object.keys(parsed).length} προϊόντων.`);
         } catch (err) {
           alert("Σφάλμα στο αρχείο: " + err.message);
@@ -549,17 +675,23 @@
     document.getElementById("stopScanBtn").addEventListener("click", stopScanner);
     document.getElementById("saveProductBtn").addEventListener("click", saveManualProduct);
     document.getElementById("loadDemoBtn").addEventListener("click", async () => {
-      mergeProducts(makeDemoCatalog(1000));
-      await syncLocalProductsToSupabase();
-      alert("Μπήκαν 1000 demo ελληνικά προϊόντα στη βάση και έγινε προσπάθεια αποθήκευσης online.");
+      const demo = makeDemoCatalog(1000);
+      mergeProducts(demo);
+      for (const item of Object.values(demo).slice(0, 200)) {
+        await upsertProductToSupabase(item);
+      }
+      alert("Μπήκαν 1000 demo ελληνικά προϊόντα στη βάση. Τα πρώτα 200 στάλθηκαν και στο cloud.");
     });
     document.getElementById("exportBtn").addEventListener("click", exportDatabase);
     document.getElementById("clearBtn").addEventListener("click", clearDatabase);
     document.getElementById("fileInput").addEventListener("change", (e) => handleFileUpload(e.target.files[0]));
-    document.getElementById("barcodeInput").addEventListener("keydown", (e) => { if (e.key === "Enter") searchProduct(); });
+    document.getElementById("barcodeInput").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") searchProduct();
+    });
 
     updateCatalogTable();
     updateImportStatus();
+    syncLocalProductsToSupabase();
     loadSomeProductsFromSupabase();
   </script>
 </body>
