@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>R2 Τηλεχειριστήριο</title>
+  <meta name="description" content="Χειρισμός του εκπαιδευτικού ρομπότ R2 (Polytech) μέσω Bluetooth από λάπτοπ, κινητό ή tablet Android." />
+  <meta name="theme-color" content="#0f766e" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <style>
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --pad: #334155;
+      --pad-active: #0f766e;
+      --stop: #b91c1c;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --log-bg: #0f172a;
+      --log-text: #e2e8f0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #0b1120;
+        --card: #111827;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --line: #1f2937;
+        --accent: #14b8a6;
+        --accent-soft: #134e4a;
+        --pad: #1e293b;
+        --pad-active: #0d9488;
+        --stop: #dc2626;
+        --log-bg: #020617;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #0b1120;
+      --card: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --line: #1f2937;
+      --accent: #14b8a6;
+      --accent-soft: #134e4a;
+      --pad: #1e293b;
+      --pad-active: #0d9488;
+      --stop: #dc2626;
+      --log-bg: #020617;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    h1 { font-size: 1.5rem; margin: 0; }
+    h2 { font-size: 1.1rem; margin: 0 0 12px; }
+    p { margin: 0 0 10px; }
+    .status {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px; border-radius: 999px;
+      background: var(--card); border: 1px solid var(--line); font-weight: 600;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--stop); }
+    .dot.on { background: var(--ok); }
+    .dot.busy { background: var(--warn); }
+    .grid { display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 18px; padding: 16px;
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .row > * { flex: 1 1 160px; }
+    button, select, input {
+      font: inherit; font-size: 16px; border-radius: 12px;
+      border: 1px solid var(--line); padding: 12px;
+      background: var(--card); color: var(--text);
+    }
+    button {
+      cursor: pointer; background: var(--accent); color: #fff;
+      border: none; font-weight: 700;
+    }
+    button.secondary { background: var(--pad); }
+    button.danger { background: var(--stop); }
+    button:disabled { opacity: .45; cursor: not-allowed; }
+    .muted { color: var(--muted); font-size: 14px; }
+    .notice {
+      background: var(--accent-soft); border-radius: 12px;
+      padding: 10px 12px; font-size: 14px; margin-top: 12px;
+    }
+    .notice.warn { background: #fef3c7; color: #78350f; }
+
+    /* Χειριστήριο κατεύθυνσης */
+    .pad {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; max-width: 360px; margin: 0 auto;
+      touch-action: none; user-select: none; -webkit-user-select: none;
+    }
+    .pad button {
+      aspect-ratio: 1; font-size: 2rem; background: var(--pad);
+      border-radius: 20px; padding: 0; touch-action: none;
+    }
+    .pad button.diag { font-size: 1.4rem; opacity: .85; }
+    .pad button.pressed { background: var(--pad-active); transform: scale(.96); }
+    .pad button.stop { background: var(--stop); font-size: 1.1rem; }
+    .speed { margin-top: 18px; }
+    .speed input[type=range] { width: 100%; padding: 0; accent-color: var(--accent); }
+    .speed-label { display: flex; justify-content: space-between; font-weight: 600; }
+    .extras { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 16px; }
+    .extras button { background: var(--pad); touch-action: none; }
+    .extras button.pressed, .extras button.active { background: var(--pad-active); }
+    kbd {
+      border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px;
+      padding: 1px 6px; font-size: 13px; background: var(--bg);
+    }
+
+    /* Τερματικό */
+    .log {
+      background: var(--log-bg); color: var(--log-text);
+      font-family: ui-monospace, Consolas, monospace; font-size: 13px;
+      border-radius: 12px; padding: 10px; height: 220px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all;
+    }
+    .log .tx { color: #5eead4; }
+    .log .rx { color: #fcd34d; }
+    .log .err { color: #fca5a5; }
+    .log .info { color: #94a3b8; }
+
+    /* Ρυθμίσεις */
+    details summary { cursor: pointer; font-weight: 700; font-size: 1.05rem; }
+    .map { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; margin-top: 12px; }
+    .map label { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+    .map input, .map select { width: 100%; min-width: 0; }
+    .map input { font-family: ui-monospace, Consolas, monospace; }
+    .full { grid-column: 1 / -1; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>🤖 R2 Τηλεχειριστήριο</h1>
+      <p class="muted">Χειρισμός του ρομπότ R2 (Polytech) μέσω Bluetooth από λάπτοπ, κινητό ή tablet.</p>
+    </div>
+    <div class="status"><span id="dot" class="dot"></span><span id="statusText">Αποσυνδεδεμένο</span></div>
+  </header>
+
+  <div class="grid">
+    <!-- Σύνδεση -->
+    <section class="card">
+      <h2>1. Σύνδεση</h2>
+      <div class="row">
+        <button id="btnBle">📶 Bluetooth (BLE)</button>
+        <button id="btnSerial" class="secondary">🔌 Σειριακή θύρα (κλασικό BT / USB)</button>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="muted" style="flex:0 0 auto" for="baud">Ταχύτητα σειριακής:</label>
+        <select id="baud">
+          <option>9600</option><option>19200</option><option>38400</option>
+          <option>57600</option><option>115200</option>
+        </select>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnDemo" class="secondary">🧪 Δοκιμή χωρίς ρομπότ</button>
+        <button id="btnDisconnect" class="danger" disabled>Αποσύνδεση</button>
+      </div>
+      <div id="support" class="notice"></div>
+    </section>
+
+    <!-- Τερματικό -->
+    <section class="card">
+      <h2>Τερματικό</h2>
+      <div id="log" class="log" aria-live="polite"></div>
+      <form id="termForm" class="row" style="margin-top:10px">
+        <input id="termInput" placeholder="Γράψε εντολή, π.χ. U" autocomplete="off" style="flex:3 1 160px" />
+        <button type="submit" style="flex:1 1 90px">Αποστολή</button>
+      </form>
+      <div class="row" style="margin-top:10px">
+        <button id="btnClearLog" class="secondary">Καθαρισμός</button>
+      </div>
+    </section>
+
+    <!-- Χειριστήριο -->
+    <section class="card">
+      <h2>2. Οδήγηση</h2>
+      <div class="pad" id="pad">
+        <button class="diag" data-action="forwardLeft" aria-label="Μπροστά αριστερά">↖</button>
+        <button data-action="forward" aria-label="Μπροστά">▲</button>
+        <button class="diag" data-action="forwardRight" aria-label="Μπροστά δεξιά">↗</button>
+        <button data-action="left" aria-label="Αριστερά">◀</button>
+        <button class="stop" data-action="stop" aria-label="Στοπ">STOP</button>
+        <button data-action="right" aria-label="Δεξιά">▶</button>
+        <button class="diag" data-action="backLeft" aria-label="Πίσω αριστερά">↙</button>
+        <button data-action="backward" aria-label="Πίσω">▼</button>
+        <button class="diag" data-action="backRight" aria-label="Πίσω δεξιά">↘</button>
+      </div>
+      <div class="speed" id="speedBox">
+        <div class="speed-label"><span>Ταχύτητα</span><span id="speedVal">3</span></div>
+        <input id="speed" type="range" min="1" max="9" value="3" />
+      </div>
+      <p class="muted" style="margin-top:12px">
+        Πληκτρολόγιο: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> ή <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>,
+        <kbd>Space</kbd> στοπ, <kbd>H</kbd> κόρνα/ήχος, <kbd>1</kbd>–<kbd>9</kbd> ταχύτητα.
+      </p>
+      <p class="muted" id="noSpeedNote">Το αρχικό πρόγραμμα του R2 έχει σταθερή ταχύτητα και κινείται μόνο ευθεία ή στρίβει επί τόπου.</p>
+    </section>
+
+    <!-- Λειτουργίες -->
+    <section class="card">
+      <h2>3. Λειτουργίες</h2>
+      <div class="extras">
+        <button id="btnStart" data-needs="handshake">▶️ Έναρξη τηλεχειρισμού</button>
+        <button data-send="remoteExit">⏏️ Έξοδος τηλεχειρισμού</button>
+        <button data-send="sound1">🎵 Ήχος 1</button>
+        <button data-send="sound2">🎶 Ήχος 2</button>
+        <button id="btnHorn" data-needs="hornOn">📢 Κόρνα (κράτα)</button>
+        <button id="btnLights" data-needs="lightsOn">💡 Φώτα</button>
+      </div>
+      <p class="muted" style="margin-top:12px">
+        Με το αρχικό πρόγραμμα του R2, ο τηλεχειρισμός ξεκινά αυτόματα με τη σύνδεση
+        (ακούγεται ένας ήχος). Αν πατήσεις «Έξοδος» ή το ρομπότ κάνει επανεκκίνηση,
+        πάτα «Έναρξη τηλεχειρισμού».
+      </p>
+    </section>
+
+    <!-- Ρυθμίσεις -->
+    <section class="card full">
+      <details id="settings">
+        <summary>⚙️ Ρυθμίσεις εντολών</summary>
+        <p class="muted" style="margin-top:10px">
+          Κάθε κουμπί στέλνει στο ρομπότ το κείμενο που ορίζεις εδώ. Αν το πρόγραμμα του ρομπότ σας
+          περιμένει άλλες εντολές, άλλαξέ τες. Οι ρυθμίσεις αποθηκεύονται σε αυτή τη συσκευή.
+          Στην ταχύτητα, το <code>{n}</code> αντικαθίσταται από τον αριθμό 1–9.
+        </p>
+        <div class="row">
+          <label class="muted" style="flex:0 0 auto" for="preset">Έτοιμο σετ:</label>
+          <select id="preset"></select>
+        </div>
+        <div class="map" id="map"></div>
+        <div class="map">
+          <label>Τέλος κάθε εντολής
+            <select id="eol">
+              <option value="">Τίποτα</option>
+              <option value="\n">Νέα γραμμή (\n)</option>
+              <option value="\r\n">CR + LF (\r\n)</option>
+              <option value="\r">CR (\r)</option>
+            </select>
+          </label>
+          <label>Επανάληψη όσο πατάς (ms, 0 = όχι)
+            <input id="repeat" type="number" min="0" step="50" />
+          </label>
+          <label class="full">Εντολή έναρξης (στέλνεται με \n μόλις γίνει η σύνδεση· κενό = καμία)
+            <input id="handshake" />
+          </label>
+          <label>Αναμονή μετά την έναρξη (ms)
+            <input id="handshakeWait" type="number" min="0" step="100" />
+          </label>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button id="btnReset" class="secondary">Επαναφορά σετ</button>
+        </div>
+      </details>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Εντολές ----------
+  const ACTIONS = [
+    ['forward', 'Μπροστά'], ['backward', 'Πίσω'], ['left', 'Αριστερά'], ['right', 'Δεξιά'],
+    ['forwardLeft', 'Μπροστά αριστερά'], ['forwardRight', 'Μπροστά δεξιά'],
+    ['backLeft', 'Πίσω αριστερά'], ['backRight', 'Πίσω δεξιά'], ['stop', 'Στοπ'],
+    ['speed', 'Ταχύτητα ({n}=1-9)'], ['hornOn', 'Κόρνα ON'], ['hornOff', 'Κόρνα OFF'],
+    ['sound1', 'Ήχος 1'], ['sound2', 'Ήχος 2'], ['lightsOn', 'Φώτα ON'], ['lightsOff', 'Φώτα OFF'],
+    ['remoteExit', 'Έξοδος τηλεχειρισμού'],
+  ];
+
+  // Το αρχικό πρόγραμμα του R2 (code_R2remote.ino) περιμένει πρώτα μια γραμμή JSON
+  // {"data":[...8 τιμές...]} και μετά εντολές ενός χαρακτήρα.
+  const R2_HANDSHAKE = '{"data":[0,0,0,0,0,0,0,0]}';
+  const PRESETS = {
+    r2: {
+      name: 'R2 Polytech — αρχικό πρόγραμμα (U/D/L/R/S)',
+      eol: '', repeat: 0, handshake: R2_HANDSHAKE, handshakeWait: 1800,
+      map: {
+        forward: 'U', backward: 'D', left: 'L', right: 'R', stop: 'S',
+        sound1: 'T', sound2: 'F', remoteExit: 'P',
+      },
+    },
+    r2plus: {
+      name: 'R2 Polytech — πρόγραμμα R2 Plus (ταχύτητα, διαγώνια, κόρνα, φώτα)',
+      eol: '', repeat: 0, handshake: R2_HANDSHAKE, handshakeWait: 300,
+      map: {
+        forward: 'U', backward: 'D', left: 'L', right: 'R',
+        forwardLeft: 'Q', forwardRight: 'E', backLeft: 'Z', backRight: 'C', stop: 'S',
+        speed: '{n}', hornOn: 'V', hornOff: 'v', sound1: 'T', sound2: 'F',
+        lightsOn: 'W', lightsOff: 'w', remoteExit: 'P',
+      },
+    },
+    classic: {
+      name: 'Γενικό Arduino car (F/B/L/R/S)',
+      eol: '', repeat: 0, handshake: '', handshakeWait: 0,
+      map: {
+        forward: 'F', backward: 'B', left: 'L', right: 'R',
+        forwardLeft: 'G', forwardRight: 'I', backLeft: 'H', backRight: 'J', stop: 'S',
+        speed: '{n}', hornOn: 'V', hornOff: 'v', lightsOn: 'W', lightsOff: 'w',
+      },
+    },
+  };
+
+  const STORE_KEY = 'r2-remote-settings-v2';
+  let settings = loadSettings();
+
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORE_KEY));
+      if (saved && saved.map) return saved;
+    } catch (_) { /* χωρίς αποθήκευση */ }
+    return presetSettings('r2');
+  }
+  function presetSettings(key) {
+    const p = PRESETS[key];
+    return {
+      preset: key, eol: p.eol, repeat: p.repeat,
+      handshake: p.handshake, handshakeWait: p.handshakeWait, map: { ...p.map },
+    };
+  }
+  const has = (action) => Boolean(settings.map[action]);
+  function saveSettings() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(settings)); } catch (_) { /* αγνόησε */ }
+  }
+
+  // ---------- Στοιχεία σελίδας ----------
+  const $ = (id) => document.getElementById(id);
+  const logEl = $('log');
+
+  function log(text, cls = 'info') {
+    const line = document.createElement('div');
+    line.className = cls;
+    const t = new Date().toLocaleTimeString('el-GR', { hour12: false });
+    line.textContent = `[${t}] ${text}`;
+    logEl.appendChild(line);
+    while (logEl.childElementCount > 300) logEl.firstChild.remove();
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  const visible = (s) => s.replace(/\r/g, '\\r').replace(/\n/g, '\\n');
+
+  function setStatus(state, text) {
+    $('dot').className = 'dot' + (state === 'on' ? ' on' : state === 'busy' ? ' busy' : '');
+    $('statusText').textContent = text;
+    const connected = state === 'on';
+    $('btnDisconnect').disabled = !connected && state !== 'busy';
+    $('btnBle').disabled = connected || state === 'busy' || !navigator.bluetooth;
+    $('btnSerial').disabled = connected || state === 'busy' || !navigator.serial;
+    $('btnDemo').disabled = connected || state === 'busy';
+  }
+
+  // ---------- Υποστήριξη browser ----------
+  (function showSupport() {
+    const parts = [];
+    if (!window.isSecureContext) {
+      parts.push('⚠️ Η σελίδα πρέπει να ανοίγει από <b>https://</b> (π.χ. GitHub Pages) ή localhost για να λειτουργήσει το Bluetooth.');
+    }
+    parts.push(navigator.bluetooth
+      ? '✅ Bluetooth BLE διαθέσιμο.'
+      : '❌ Αυτός ο browser δεν υποστηρίζει Web Bluetooth. Χρησιμοποίησε <b>Chrome</b> ή <b>Edge</b> (Windows, Mac, Chromebook, Android).');
+    parts.push(navigator.serial
+      ? '✅ Σειριακή θύρα διαθέσιμη (για κλασικό Bluetooth, κάνε πρώτα σύζευξη του ρομπότ από τις ρυθμίσεις Bluetooth της συσκευής).'
+      : 'ℹ️ Η σειριακή θύρα δεν υποστηρίζεται εδώ (χρειάζεται Chrome/Edge σε υπολογιστή ή νεότερο Chrome σε Android).');
+    const el = $('support');
+    el.innerHTML = parts.join('<br>');
+    if (!navigator.bluetooth && !navigator.serial) el.classList.add('warn');
+  })();
+
+  // ---------- Μεταφορά (BLE / Serial / Demo) ----------
+  let transport = null;
+  let sendChain = Promise.resolve();
+  let pending = 0;
+  const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+  let rxBuffer = '';
+
+  function onReceive(text) {
+    rxBuffer += text;
+    const lines = rxBuffer.split(/\r?\n/);
+    rxBuffer = lines.pop();
+    lines.filter(Boolean).forEach((l) => log('← ' + l, 'rx'));
+    if (rxBuffer.length > 80) { log('← ' + rxBuffer, 'rx'); rxBuffer = ''; }
+  }
+
+  // Γνωστές υπηρεσίες "σειριακής" επικοινωνίας σε BLE modules
+  const BLE_UART = [
+    { service: 0xffe0, write: 0xffe1, notify: 0xffe1, name: 'HM-10 / HC-08 / JDY / AT-09' },
+    { service: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', write: '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
+      notify: '6e400003-b5a3-f393-e0a9-e50e24dcca9e', name: 'Nordic UART' },
+    { service: 0xfff0, write: 0xfff2, notify: 0xfff1, name: 'BT05 / CC41' },
+    { service: '49535343-fe7d-4ae5-8fa9-9fafd205e455', write: '49535343-8841-43f4-a8d4-ecbe34729bb3',
+      notify: '49535343-1e4d-4bd9-ba61-23c647249616', name: 'Microchip ISSC' },
+    { service: 0xffe5, write: 0xffe9, notify: null, name: 'FFE5' },
+  ];
+  const uuid = (u) => typeof u === 'number' ? BluetoothUUID.canonicalUUID(u) : u;
+
+  async function connectBle() {
+    setStatus('busy', 'Αναζήτηση…');
+    try {
+      const device = await navigator.bluetooth.requestDevice({
+        acceptAllDevices: true,
+        optionalServices: BLE_UART.map((s) => uuid(s.service)),
+      });
+      log(`Σύνδεση με «${device.name || 'χωρίς όνομα'}»…`);
+      device.addEventListener('gattserverdisconnected', () => {
+        if (transport && transport.device === device) handleLost('Το ρομπότ αποσυνδέθηκε.');
+      });
+      const server = await device.gatt.connect();
+
+      let writeChar = null, notifyChar = null, found = null;
+      for (const s of BLE_UART) {
+        let service;
+        try { service = await server.getPrimaryService(uuid(s.service)); } catch (_) { continue; }
+        try { writeChar = await service.getCharacteristic(uuid(s.write)); } catch (_) { writeChar = null; }
+        if (s.notify) { try { notifyChar = await service.getCharacteristic(uuid(s.notify)); } catch (_) { notifyChar = null; } }
+        if (!writeChar) {
+          // Ψάξε οποιοδήποτε εγγράψιμο χαρακτηριστικό σε αυτή την υπηρεσία
+          const chars = await service.getCharacteristics();
+          writeChar = chars.find((c) => c.properties.writeWithoutResponse || c.properties.write) || null;
+          notifyChar = notifyChar || chars.find((c) => c.properties.notify) || null;
+        }
+        if (writeChar) { found = s; break; }
+      }
+      if (!writeChar) {
+        device.gatt.disconnect();
+        throw new Error('Η συσκευή δεν έχει γνωστή υπηρεσία σειριακής επικοινωνίας BLE. ' +
+          'Αν το ρομπότ έχει κλασικό Bluetooth (HC-05/HC-06), κάνε σύζευξη και χρησιμοποίησε «Σειριακή θύρα».');
+      }
+      if (notifyChar) {
+        try {
+          await notifyChar.startNotifications();
+          notifyChar.addEventListener('characteristicvaluechanged', (e) => onReceive(decoder.decode(e.target.value)));
+        } catch (_) { /* χωρίς λήψη */ }
+      }
+      const noResp = writeChar.properties.writeWithoutResponse;
+      transport = {
+        kind: 'ble', device,
+        async write(bytes) {
+          for (let i = 0; i < bytes.length; i += 20) {
+            const chunk = bytes.slice(i, i + 20);
+            if (noResp && writeChar.writeValueWithoutResponse) await writeChar.writeValueWithoutResponse(chunk);
+            else if (writeChar.writeValueWithResponse) await writeChar.writeValueWithResponse(chunk);
+            else await writeChar.writeValue(chunk);
+          }
+        },
+        async close() { if (device.gatt.connected) device.gatt.disconnect(); },
+      };
+      log(`Συνδέθηκε (${found.name}).`);
+      setStatus('on', `BLE: ${device.name || 'R2'}`);
+      startRemote();
+    } catch (err) {
+      if (err.name === 'NotFoundError') log('Ακυρώθηκε η επιλογή συσκευής.');
+      else log('Σφάλμα: ' + err.message, 'err');
+      transport = null;
+      setStatus('off', 'Αποσυνδεδεμένο');
+    }
+  }
+
+  async function connectSerial() {
+    setStatus('busy', 'Επιλογή θύρας…');
+    try {
+      const port = await navigator.serial.requestPort();
+      const baudRate = Number($('baud').value);
+      await port.open({ baudRate });
+      const writer = port.writable.getWriter();
+      let reader = null, closing = false;
+      transport = {
+        kind: 'serial', port,
+        async write(bytes) { await writer.write(bytes); },
+        async close() {
+          closing = true;
+          try { if (reader) await reader.cancel(); } catch (_) {}
+          try { writer.releaseLock(); } catch (_) {}
+          try { await port.close(); } catch (_) {}
+        },
+      };
+      (async () => {
+        while (port.readable && !closing) {
+          reader = port.readable.getReader();
+          try {
+            for (;;) {
+              const { value, done } = await reader.read();
+              if (done) break;
+              if (value) onReceive(decoder.decode(value, { stream: true }));
+            }
+          } catch (_) { /* η θύρα έκλεισε */ } finally { reader.releaseLock(); }
+        }
+        if (!closing && transport && transport.port === port) handleLost('Η σειριακή σύνδεση χάθηκε.');
+      })();
+      log(`Συνδέθηκε σε σειριακή θύρα (${baudRate} baud).`);
+      setStatus('on', 'Σειριακή θύρα');
+      // Με καλώδιο USB το Arduino κάνει επανεκκίνηση όταν ανοίγει η θύρα
+      if (settings.handshake) sendChain = sendChain.then(() => new Promise((r) => setTimeout(r, 2000)));
+      startRemote();
+    } catch (err) {
+      if (err.name === 'NotFoundError') log('Ακυρώθηκε η επιλογή θύρας.');
+      else log('Σφάλμα: ' + err.message, 'err');
+      transport = null;
+      setStatus('off', 'Αποσυνδεδεμένο');
+    }
+  }
+
+  function connectDemo() {
+    transport = { kind: 'demo', async write() {}, async close() {} };
+    log('Λειτουργία δοκιμής: οι εντολές εμφανίζονται μόνο εδώ.');
+    setStatus('on', 'Δοκιμή (χωρίς ρομπότ)');
+    startRemote();
+  }
+
+  async function disconnect() {
+    stopAll();
+    const t = transport;
+    if (!t) return;
+    sendAction('stop');
+    await sendChain.catch(() => {});
+    transport = null;
+    try { await t.close(); } catch (_) {}
+    log('Αποσυνδέθηκε.');
+    setStatus('off', 'Αποσυνδεδεμένο');
+  }
+
+  function handleLost(msg) {
+    stopAll();
+    transport = null;
+    log(msg, 'err');
+    setStatus('off', 'Αποσυνδεδεμένο');
+  }
+
+  function sendRaw(text, { droppable = false, eol = settings.eol } = {}) {
+    if (!transport) { log('Δεν υπάρχει σύνδεση — «' + visible(text) + '» δεν στάλθηκε.', 'err'); return; }
+    if (!text) return;
+    // Οι επαναλήψεις παραλείπονται αν η σύνδεση δεν προλαβαίνει
+    if (droppable && pending > 2) return;
+    const t = transport;
+    const data = text + eol;
+    pending++;
+    sendChain = sendChain
+      .then(() => t.write(encoder.encode(data)))
+      .then(() => log('→ ' + visible(data), 'tx'))
+      .catch((err) => log('Σφάλμα αποστολής: ' + err.message, 'err'))
+      .finally(() => { pending--; });
+  }
+
+  // Στέλνει την εντολή έναρξης και περιμένει όσο το ρομπότ παίζει τον ήχο του.
+  // Προσοχή: το αρχικό πρόγραμμα κολλάει αν λάβει κάτι άλλο αμέσως μετά τη γραμμή JSON.
+  function startRemote() {
+    if (!settings.handshake) return;
+    log('Ενεργοποίηση τηλεχειρισμού…');
+    sendRaw(settings.handshake, { eol: '\n' });
+    const wait = Math.max(0, Number(settings.handshakeWait) || 0);
+    sendChain = sendChain.then(() => new Promise((r) => setTimeout(r, wait)))
+      .then(() => { if (transport) log('Έτοιμο για οδήγηση.'); });
+  }
+
+  function sendAction(action, opts) {
+    let cmd = settings.map[action] || '';
+    if (action === 'speed') cmd = cmd.replace('{n}', String(speed));
+    sendRaw(cmd, opts);
+  }
+
+  // ---------- Οδήγηση ----------
+  let speed = 3;
+  let activeMove = null;
+  let repeatTimer = null;
+
+  function startMove(action) {
+    if (action === 'stop') { stopMove(); return; }
+    if (activeMove === action) return;
+    activeMove = action;
+    highlight();
+    sendAction(action);
+    clearInterval(repeatTimer);
+    const ms = Number(settings.repeat) || 0;
+    if (ms > 0) repeatTimer = setInterval(() => sendAction(action, { droppable: true }), Math.max(50, ms));
+  }
+  function stopMove() {
+    clearInterval(repeatTimer);
+    repeatTimer = null;
+    activeMove = null;
+    highlight();
+    sendAction('stop');
+  }
+  function stopAll() {
+    clearInterval(repeatTimer);
+    repeatTimer = null;
+    activeMove = null;
+    keys.clear();
+    highlight();
+  }
+  function highlight() {
+    document.querySelectorAll('#pad button').forEach((b) =>
+      b.classList.toggle('pressed', b.dataset.action === activeMove));
+  }
+
+  // Αφή / ποντίκι: κράτα πατημένο για κίνηση, άφησε για στοπ
+  document.querySelectorAll('#pad button').forEach((btn) => {
+    const action = btn.dataset.action;
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch (_) {}
+      startMove(action);
+    });
+    const release = () => { if (activeMove === action) stopMove(); };
+    btn.addEventListener('pointerup', release);
+    btn.addEventListener('pointercancel', release);
+    btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  });
+
+  // Πληκτρολόγιο
+  const KEYMAP = {
+    ArrowUp: 'up', KeyW: 'up', ArrowDown: 'down', KeyS: 'down',
+    ArrowLeft: 'left', KeyA: 'left', ArrowRight: 'right', KeyD: 'right',
+  };
+  const keys = new Set();
+  function actionFromKeys() {
+    const up = keys.has('up'), down = keys.has('down'), left = keys.has('left'), right = keys.has('right');
+    if (up && !down) return left && !right ? 'forwardLeft' : right && !left ? 'forwardRight' : 'forward';
+    if (down && !up) return left && !right ? 'backLeft' : right && !left ? 'backRight' : 'backward';
+    if (left && !right) return 'left';
+    if (right && !left) return 'right';
+    return null;
+  }
+  function typing(e) { return e.target.closest('input, select, textarea'); }
+  window.addEventListener('keydown', (e) => {
+    if (typing(e)) return;
+    const dir = KEYMAP[e.code];
+    if (dir) {
+      e.preventDefault();
+      if (e.repeat) return;
+      keys.add(dir);
+      const a = actionFromKeys();
+      a ? startMove(a) : stopMove();
+    } else if (e.code === 'Space') {
+      e.preventDefault();
+      keys.clear();
+      stopMove();
+    } else if (e.code === 'KeyH' && !e.repeat) {
+      has('hornOn') ? hornDown() : sendAction('sound1');
+    } else if (/^Digit[1-9]$/.test(e.code)) {
+      setSpeed(Number(e.code.slice(5)), true);
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    if (typing(e)) return;
+    const dir = KEYMAP[e.code];
+    if (dir) {
+      keys.delete(dir);
+      const a = actionFromKeys();
+      a ? startMove(a) : (activeMove && stopMove());
+    } else if (e.code === 'KeyH') {
+      hornUp();
+    }
+  });
+  // Ασφάλεια: σταμάτα το ρομπότ αν η εφαρμογή χάσει την εστίαση
+  window.addEventListener('blur', () => { if (activeMove) stopMove(); hornUp(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden && activeMove) stopMove(); });
+
+  // Ταχύτητα
+  function setSpeed(n, send) {
+    speed = Math.min(9, Math.max(1, n));
+    $('speed').value = speed;
+    $('speedVal').textContent = speed;
+    if (send) sendAction('speed');
+  }
+  $('speed').addEventListener('input', (e) => setSpeed(Number(e.target.value), false));
+  $('speed').addEventListener('change', (e) => setSpeed(Number(e.target.value), true));
+
+  // ---------- Λειτουργίες ----------
+  const hornBtn = $('btnHorn');
+  let hornOn = false;
+  function hornDown() { if (hornOn) return; hornOn = true; hornBtn.classList.add('pressed'); sendAction('hornOn'); }
+  function hornUp() { if (!hornOn) return; hornOn = false; hornBtn.classList.remove('pressed'); sendAction('hornOff'); }
+  hornBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    try { hornBtn.setPointerCapture(e.pointerId); } catch (_) {}
+    hornDown();
+  });
+  hornBtn.addEventListener('pointerup', hornUp);
+  hornBtn.addEventListener('pointercancel', hornUp);
+  hornBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  const lightsBtn = $('btnLights');
+  lightsBtn.addEventListener('click', () => {
+    const on = !lightsBtn.classList.contains('active');
+    lightsBtn.classList.toggle('active', on);
+    sendAction(on ? 'lightsOn' : 'lightsOff');
+  });
+
+  document.querySelectorAll('[data-send]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.send === 'remoteExit') stopAll();
+      sendAction(btn.dataset.send);
+    });
+  });
+  $('btnStart').addEventListener('click', () => {
+    if (transport) startRemote();
+    else log('Δεν υπάρχει σύνδεση.', 'err');
+  });
+
+  // Κρύβει τα κουμπιά που δεν έχουν εντολή στο τρέχον σετ
+  function applyVisibility() {
+    document.querySelectorAll('#pad button').forEach((b) => {
+      b.style.visibility = has(b.dataset.action) ? '' : 'hidden';
+    });
+    $('speedBox').hidden = !has('speed');
+    $('noSpeedNote').hidden = has('speed') || !has('forward');
+    document.querySelectorAll('[data-send]').forEach((b) => { b.hidden = !has(b.dataset.send); });
+    $('btnHorn').hidden = !has('hornOn');
+    $('btnLights').hidden = !has('lightsOn');
+    $('btnStart').hidden = !settings.handshake;
+  }
+
+  // ---------- Τερματικό ----------
+  $('termForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const v = $('termInput').value;
+    if (v) { sendRaw(v); $('termInput').value = ''; }
+  });
+  $('btnClearLog').addEventListener('click', () => { logEl.innerHTML = ''; });
+
+  // ---------- Ρυθμίσεις ----------
+  function renderSettings() {
+    const sel = $('preset');
+    sel.innerHTML = '';
+    for (const [k, p] of Object.entries(PRESETS)) sel.add(new Option(p.name, k));
+    sel.add(new Option('Προσαρμοσμένο', 'custom'));
+    sel.value = settings.preset in PRESETS ? settings.preset : 'custom';
+
+    const map = $('map');
+    map.innerHTML = '';
+    for (const [key, label] of ACTIONS) {
+      const l = document.createElement('label');
+      l.textContent = label;
+      const input = document.createElement('input');
+      input.value = settings.map[key] || '';
+      input.addEventListener('input', () => {
+        settings.map[key] = input.value;
+        settings.preset = 'custom';
+        $('preset').value = 'custom';
+        saveSettings();
+        applyVisibility();
+      });
+      l.appendChild(input);
+      map.appendChild(l);
+    }
+    $('eol').value = settings.eol;
+    $('repeat').value = settings.repeat;
+    $('handshake').value = settings.handshake || '';
+    $('handshakeWait').value = settings.handshakeWait || 0;
+    applyVisibility();
+  }
+  $('preset').addEventListener('change', (e) => {
+    if (e.target.value === 'custom') return;
+    settings = presetSettings(e.target.value);
+    saveSettings();
+    renderSettings();
+  });
+  $('eol').addEventListener('change', (e) => { settings.eol = e.target.value; saveSettings(); });
+  $('repeat').addEventListener('change', (e) => { settings.repeat = Math.max(0, Number(e.target.value) || 0); saveSettings(); });
+  $('handshake').addEventListener('input', (e) => {
+    settings.handshake = e.target.value.trim();
+    settings.preset = 'custom';
+    $('preset').value = 'custom';
+    saveSettings();
+    applyVisibility();
+  });
+  $('handshakeWait').addEventListener('change', (e) => { settings.handshakeWait = Math.max(0, Number(e.target.value) || 0); saveSettings(); });
+  $('btnReset').addEventListener('click', () => {
+    settings = presetSettings(settings.preset in PRESETS ? settings.preset : 'r2');
+    saveSettings();
+    renderSettings();
+  });
+
+  // ---------- Εκκίνηση ----------
+  $('btnBle').addEventListener('click', connectBle);
+  $('btnSerial').addEventListener('click', connectSerial);
+  $('btnDemo').addEventListener('click', connectDemo);
+  $('btnDisconnect').addEventListener('click', disconnect);
+
+  renderSettings();
+  setStatus('off', 'Αποσυνδεδεμένο');
+  log('Έτοιμο. Πάτα «Bluetooth (BLE)» ή «Σειριακή θύρα» για σύνδεση.');
+
+  if ('serviceWorker' in navigator && window.isSecureContext) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>

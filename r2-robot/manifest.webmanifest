@@ -1,0 +1,15 @@
+{
+  "name": "R2 Τηλεχειριστήριο",
+  "short_name": "R2 Remote",
+  "description": "Χειρισμός του ρομπότ R2 (Polytech) μέσω Bluetooth",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f766e",
+  "theme_color": "#0f766e",
+  "lang": "el",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
