@@ -225,7 +225,7 @@
         Πληκτρολόγιο: <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> ή <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>,
         <kbd>Space</kbd> στοπ, <kbd>H</kbd> κόρνα/ήχος, <kbd>1</kbd>–<kbd>9</kbd> ταχύτητα.
       </p>
-      <p class="muted" id="noSpeedNote">Το αρχικό πρόγραμμα του R2 έχει σταθερή ταχύτητα και κινείται μόνο ευθεία ή στρίβει επί τόπου.</p>
+      <p class="muted" id="noSpeedNote">Το πρόγραμμα της Polytech έχει σταθερή ταχύτητα και κινείται μόνο ευθεία ή στρίβει επί τόπου. Φόρτωσε το LAZ code στο ρομπότ για ταχύτητα, διαγώνια, κόρνα και φώτα.</p>
     </section>
 
     <!-- Λειτουργίες -->
@@ -240,9 +240,8 @@
         <button id="btnLights" data-needs="lightsOn">💡 Φώτα</button>
       </div>
       <p class="muted" style="margin-top:12px">
-        Με το αρχικό πρόγραμμα του R2, ο τηλεχειρισμός ξεκινά αυτόματα με τη σύνδεση
-        (ακούγεται ένας ήχος). Αν πατήσεις «Έξοδος» ή το ρομπότ κάνει επανεκκίνηση,
-        πάτα «Έναρξη τηλεχειρισμού».
+        Η εφαρμογή αναγνωρίζει μόνη της αν το ρομπότ έχει LAZ code ή το πρόγραμμα της Polytech.
+        Αν πατήσεις «Έξοδος», πάτα «Έναρξη τηλεχειρισμού» για να συνεχίσεις.
       </p>
     </section>
 
@@ -301,26 +300,27 @@
     ['remoteExit', 'Έξοδος τηλεχειρισμού'],
   ];
 
-  // Το αρχικό πρόγραμμα του R2 (code_R2remote.ino) περιμένει πρώτα μια γραμμή JSON
+  // Το πρόγραμμα της Polytech (code_R2remote) περιμένει πρώτα μια γραμμή JSON
   // {"data":[...8 τιμές...]} και μετά εντολές ενός χαρακτήρα.
+  // Το LAZ code είναι έτοιμο αμέσως, απαντά στο «?» και έχει περισσότερες εντολές.
   const R2_HANDSHAKE = '{"data":[0,0,0,0,0,0,0,0]}';
   const PRESETS = {
-    r2: {
-      name: 'R2 Polytech — αρχικό πρόγραμμα (U/D/L/R/S)',
-      eol: '', repeat: 0, handshake: R2_HANDSHAKE, handshakeWait: 1800,
-      map: {
-        forward: 'U', backward: 'D', left: 'L', right: 'R', stop: 'S',
-        sound1: 'T', sound2: 'F', remoteExit: 'P',
-      },
-    },
-    r2plus: {
-      name: 'R2 Polytech — πρόγραμμα R2 Plus (ταχύτητα, διαγώνια, κόρνα, φώτα)',
+    laz: {
+      name: 'LAZ code (ταχύτητα, διαγώνια, κόρνα, φώτα)',
       eol: '', repeat: 0, handshake: R2_HANDSHAKE, handshakeWait: 300,
       map: {
         forward: 'U', backward: 'D', left: 'L', right: 'R',
         forwardLeft: 'Q', forwardRight: 'E', backLeft: 'Z', backRight: 'C', stop: 'S',
         speed: '{n}', hornOn: 'V', hornOff: 'v', sound1: 'T', sound2: 'F',
         lightsOn: 'W', lightsOff: 'w', remoteExit: 'P',
+      },
+    },
+    polytech: {
+      name: 'Polytech code_R2remote (U/D/L/R/S)',
+      eol: '', repeat: 0, handshake: R2_HANDSHAKE, handshakeWait: 1800,
+      map: {
+        forward: 'U', backward: 'D', left: 'L', right: 'R', stop: 'S',
+        sound1: 'T', sound2: 'F', remoteExit: 'P',
       },
     },
     classic: {
@@ -334,7 +334,7 @@
     },
   };
 
-  const STORE_KEY = 'r2-remote-settings-v2';
+  const STORE_KEY = 'r2-remote-settings-v3';
   let settings = loadSettings();
 
   function loadSettings() {
@@ -342,7 +342,7 @@
       const saved = JSON.parse(localStorage.getItem(STORE_KEY));
       if (saved && saved.map) return saved;
     } catch (_) { /* χωρίς αποθήκευση */ }
-    return presetSettings('r2');
+    return presetSettings('laz');
   }
   function presetSettings(key) {
     const p = PRESETS[key];
@@ -405,12 +405,30 @@
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   let rxBuffer = '';
+  let lineWaiters = [];
+  let preparing = false; // κατά την αναγνώριση/έναρξη δεν στέλνονται εντολές οδήγησης
+
+  function waitForLine(re, ms) {
+    return new Promise((resolve) => {
+      const w = (l) => { if (re.test(l)) done(l); };
+      const timer = setTimeout(() => done(null), ms);
+      function done(v) {
+        clearTimeout(timer);
+        lineWaiters = lineWaiters.filter((x) => x !== w);
+        resolve(v);
+      }
+      lineWaiters.push(w);
+    });
+  }
 
   function onReceive(text) {
     rxBuffer += text;
     const lines = rxBuffer.split(/\r?\n/);
     rxBuffer = lines.pop();
-    lines.filter(Boolean).forEach((l) => log('← ' + l, 'rx'));
+    lines.filter(Boolean).forEach((l) => {
+      log('← ' + l, 'rx');
+      lineWaiters.forEach((w) => w(l));
+    });
     if (rxBuffer.length > 80) { log('← ' + rxBuffer, 'rx'); rxBuffer = ''; }
   }
 
@@ -483,7 +501,7 @@
       };
       log(`Συνδέθηκε (${found.name}).`);
       setStatus('on', `BLE: ${device.name || 'R2'}`);
-      startRemote();
+      afterConnect(0);
     } catch (err) {
       if (err.name === 'NotFoundError') log('Ακυρώθηκε η επιλογή συσκευής.');
       else log('Σφάλμα: ' + err.message, 'err');
@@ -526,8 +544,7 @@
       log(`Συνδέθηκε σε σειριακή θύρα (${baudRate} baud).`);
       setStatus('on', 'Σειριακή θύρα');
       // Με καλώδιο USB το Arduino κάνει επανεκκίνηση όταν ανοίγει η θύρα
-      if (settings.handshake) sendChain = sendChain.then(() => new Promise((r) => setTimeout(r, 2000)));
-      startRemote();
+      afterConnect(2000);
     } catch (err) {
       if (err.name === 'NotFoundError') log('Ακυρώθηκε η επιλογή θύρας.');
       else log('Σφάλμα: ' + err.message, 'err');
@@ -540,7 +557,6 @@
     transport = { kind: 'demo', async write() {}, async close() {} };
     log('Λειτουργία δοκιμής: οι εντολές εμφανίζονται μόνο εδώ.');
     setStatus('on', 'Δοκιμή (χωρίς ρομπότ)');
-    startRemote();
   }
 
   async function disconnect() {
@@ -557,14 +573,16 @@
 
   function handleLost(msg) {
     stopAll();
+    preparing = false;
     transport = null;
     log(msg, 'err');
     setStatus('off', 'Αποσυνδεδεμένο');
   }
 
-  function sendRaw(text, { droppable = false, eol = settings.eol } = {}) {
+  function sendRaw(text, { droppable = false, eol = settings.eol, force = false } = {}) {
     if (!transport) { log('Δεν υπάρχει σύνδεση — «' + visible(text) + '» δεν στάλθηκε.', 'err'); return; }
     if (!text) return;
+    if (preparing && !force) return;
     // Οι επαναλήψεις παραλείπονται αν η σύνδεση δεν προλαβαίνει
     if (droppable && pending > 2) return;
     const t = transport;
@@ -577,15 +595,53 @@
       .finally(() => { pending--; });
   }
 
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
   // Στέλνει την εντολή έναρξης και περιμένει όσο το ρομπότ παίζει τον ήχο του.
-  // Προσοχή: το αρχικό πρόγραμμα κολλάει αν λάβει κάτι άλλο αμέσως μετά τη γραμμή JSON.
+  // Προσοχή: το πρόγραμμα της Polytech κολλάει αν λάβει κάτι άλλο αμέσως μετά τη γραμμή JSON.
   function startRemote() {
     if (!settings.handshake) return;
+    preparing = true;
     log('Ενεργοποίηση τηλεχειρισμού…');
-    sendRaw(settings.handshake, { eol: '\n' });
-    const wait = Math.max(0, Number(settings.handshakeWait) || 0);
-    sendChain = sendChain.then(() => new Promise((r) => setTimeout(r, wait)))
-      .then(() => { if (transport) log('Έτοιμο για οδήγηση.'); });
+    sendRaw(settings.handshake, { eol: '\n', force: true });
+    sendChain = sendChain.then(() => wait(Math.max(0, Number(settings.handshakeWait) || 0)))
+      .then(() => {
+        preparing = false;
+        if (transport) log('Έτοιμο για οδήγηση.');
+      });
+  }
+
+  // Μετά τη σύνδεση: ρωτά το ρομπότ αν έχει LAZ code και διαλέγει μόνο του το σωστό σετ εντολών.
+  function afterConnect(delayMs) {
+    const auto = settings.preset === 'laz' || settings.preset === 'polytech';
+    preparing = true;
+    const t = transport;
+    sendChain = sendChain.then(() => wait(delayMs)).then(async () => {
+      if (!auto) return null;
+      log('Αναγνώριση προγράμματος ρομπότ…');
+      const reply = waitForLine(/^LAZ/, 1200);
+      try { await t.write(encoder.encode('?\n')); } catch (_) { /* χειρίζεται παρακάτω */ }
+      return reply;
+    }).then((reply) => {
+      preparing = false;
+      if (transport !== t) return;
+      if (!auto) { startRemote(); return; }
+      if (reply) {
+        usePreset('laz');
+        log(`Βρέθηκε ${reply} ✓ Έτοιμο για οδήγηση.`);
+      } else {
+        usePreset('polytech');
+        log('Το ρομπότ έχει το πρόγραμμα της Polytech: χωρίς ταχύτητα, διαγώνια, κόρνα και φώτα.');
+        startRemote();
+      }
+    });
+  }
+
+  function usePreset(key) {
+    if (settings.preset === key) return;
+    settings = presetSettings(key);
+    saveSettings();
+    renderSettings();
   }
 
   function sendAction(action, opts) {
@@ -650,8 +706,9 @@
   const keys = new Set();
   function actionFromKeys() {
     const up = keys.has('up'), down = keys.has('down'), left = keys.has('left'), right = keys.has('right');
-    if (up && !down) return left && !right ? 'forwardLeft' : right && !left ? 'forwardRight' : 'forward';
-    if (down && !up) return left && !right ? 'backLeft' : right && !left ? 'backRight' : 'backward';
+    const pick = (diag, straight) => (has(diag) ? diag : straight);
+    if (up && !down) return left && !right ? pick('forwardLeft', 'forward') : right && !left ? pick('forwardRight', 'forward') : 'forward';
+    if (down && !up) return left && !right ? pick('backLeft', 'backward') : right && !left ? pick('backRight', 'backward') : 'backward';
     if (left && !right) return 'left';
     if (right && !left) return 'right';
     return null;
@@ -802,7 +859,7 @@
   });
   $('handshakeWait').addEventListener('change', (e) => { settings.handshakeWait = Math.max(0, Number(e.target.value) || 0); saveSettings(); });
   $('btnReset').addEventListener('click', () => {
-    settings = presetSettings(settings.preset in PRESETS ? settings.preset : 'r2');
+    settings = presetSettings(settings.preset in PRESETS ? settings.preset : 'laz');
     saveSettings();
     renderSettings();
   });
