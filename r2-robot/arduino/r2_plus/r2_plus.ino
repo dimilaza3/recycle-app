@@ -16,7 +16,7 @@
  * περίμενε για πάντα αν είχαν ήδη φτάσει κι άλλοι χαρακτήρες.
  *
  * Βιβλιοθήκες (Arduino IDE → Διαχείριση βιβλιοθηκών): Adafruit NeoPixel, ArduinoJson.
- * Κατά το ανέβασμα μέσω USB κλείστε το Bluetooth της συσκευής που είναι συνδεδεμένη με το ρομπότ.
+ * Κατά το ανέβασμα μέσω USB κλείστε τον διακόπτη Bluetooth του ελεγκτή.
  */
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>

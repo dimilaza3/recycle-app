@@ -164,9 +164,18 @@
     <section class="card">
       <h2>1. Σύνδεση</h2>
       <div class="row">
-        <button id="btnBle">📶 Bluetooth (BLE)</button>
-        <button id="btnSerial" class="secondary">🔌 Σειριακή θύρα (κλασικό BT / USB)</button>
+        <button id="btnBle">📶 Σύνδεση με το R2 (BT24)</button>
+        <button id="btnSerial" class="secondary">🔌 Σειριακή θύρα (HC-06 / USB)</button>
       </div>
+      <label class="muted" style="display:flex;gap:8px;align-items:center;margin-top:10px">
+        <input type="checkbox" id="showAll" style="width:auto" />
+        Εμφάνιση όλων των συσκευών Bluetooth (αν δεν βλέπεις το ρομπότ στη λίστα)
+      </label>
+      <ol class="muted" style="margin:10px 0 0;padding-left:20px">
+        <li>Βάλε τη μονάδα Bluetooth στη θύρα της και άνοιξε τον <b>διακόπτη Bluetooth</b> του ελεγκτή.</li>
+        <li>Άνοιξε το ρομπότ. Σε τάξη με πολλά ρομπότ, άνοιγε ένα-ένα: όλα λέγονται «BT24».</li>
+        <li>Πάτα «Σύνδεση» και διάλεξε το «BT24». Θα ακουστεί ένας ήχος από το ρομπότ.</li>
+      </ol>
       <div class="row" style="margin-top:10px">
         <label class="muted" style="flex:0 0 auto" for="baud">Ταχύτητα σειριακής:</label>
         <select id="baud">
@@ -379,7 +388,7 @@
       parts.push('⚠️ Η σελίδα πρέπει να ανοίγει από <b>https://</b> (π.χ. GitHub Pages) ή localhost για να λειτουργήσει το Bluetooth.');
     }
     parts.push(navigator.bluetooth
-      ? '✅ Bluetooth BLE διαθέσιμο.'
+      ? '✅ Bluetooth διαθέσιμο. Στο Android άνοιξε Bluetooth <b>και Τοποθεσία</b>.'
       : '❌ Αυτός ο browser δεν υποστηρίζει Web Bluetooth. Χρησιμοποίησε <b>Chrome</b> ή <b>Edge</b> (Windows, Mac, Chromebook, Android).');
     parts.push(navigator.serial
       ? '✅ Σειριακή θύρα διαθέσιμη (για κλασικό Bluetooth, κάνε πρώτα σύζευξη του ρομπότ από τις ρυθμίσεις Bluetooth της συσκευής).'
@@ -407,7 +416,7 @@
 
   // Γνωστές υπηρεσίες "σειριακής" επικοινωνίας σε BLE modules
   const BLE_UART = [
-    { service: 0xffe0, write: 0xffe1, notify: 0xffe1, name: 'HM-10 / HC-08 / JDY / AT-09' },
+    { service: 0xffe0, write: 0xffe1, notify: 0xffe1, name: 'BT24 / HM-10 / HC-08 / JDY' },
     { service: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', write: '6e400002-b5a3-f393-e0a9-e50e24dcca9e',
       notify: '6e400003-b5a3-f393-e0a9-e50e24dcca9e', name: 'Nordic UART' },
     { service: 0xfff0, write: 0xfff2, notify: 0xfff1, name: 'BT05 / CC41' },
@@ -420,10 +429,14 @@
   async function connectBle() {
     setStatus('busy', 'Αναζήτηση…');
     try {
-      const device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
-        optionalServices: BLE_UART.map((s) => uuid(s.service)),
-      });
+      const optionalServices = BLE_UART.map((s) => uuid(s.service));
+      // Το R2 έχει μονάδα DX-BT24 (όνομα «BT24», υπηρεσία FFE0)
+      const device = await navigator.bluetooth.requestDevice($('showAll').checked
+        ? { acceptAllDevices: true, optionalServices }
+        : {
+          filters: [{ namePrefix: 'BT24' }, { namePrefix: 'R2' }, ...optionalServices.map((u) => ({ services: [u] }))],
+          optionalServices,
+        });
       log(`Σύνδεση με «${device.name || 'χωρίς όνομα'}»…`);
       device.addEventListener('gattserverdisconnected', () => {
         if (transport && transport.device === device) handleLost('Το ρομπότ αποσυνδέθηκε.');
@@ -802,7 +815,7 @@
 
   renderSettings();
   setStatus('off', 'Αποσυνδεδεμένο');
-  log('Έτοιμο. Πάτα «Bluetooth (BLE)» ή «Σειριακή θύρα» για σύνδεση.');
+  log('Έτοιμο. Πάτα «Σύνδεση με το R2» για να ξεκινήσεις.');
 
   if ('serviceWorker' in navigator && window.isSecureContext) {
     navigator.serviceWorker.register('sw.js').catch(() => {});
