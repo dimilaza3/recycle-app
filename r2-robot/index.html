@@ -619,7 +619,7 @@
     sendChain = sendChain.then(() => wait(delayMs)).then(async () => {
       if (!auto) return null;
       log('Αναγνώριση προγράμματος ρομπότ…');
-      const reply = waitForLine(/^LAZ/, 1200);
+      const reply = waitForLine(/LAZ code/, 1200);
       try { await t.write(encoder.encode('?\n')); } catch (_) { /* χειρίζεται παρακάτω */ }
       return reply;
     }).then((reply) => {
@@ -628,7 +628,7 @@
       if (!auto) { startRemote(); return; }
       if (reply) {
         usePreset('laz');
-        log(`Βρέθηκε ${reply} ✓ Έτοιμο για οδήγηση.`);
+        log(`Βρέθηκε ${reply.slice(reply.indexOf('LAZ code'))} ✓ Έτοιμο για οδήγηση.`);
       } else {
         usePreset('polytech');
         log('Το ρομπότ έχει το πρόγραμμα της Polytech: χωρίς ταχύτητα, διαγώνια, κόρνα και φώτα.');
